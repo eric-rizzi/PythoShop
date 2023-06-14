@@ -28,6 +28,7 @@ class FileChooserDialog(Widget):
         PhotoShopWidget._file_chooser_popup.dismiss()
 
         img = Image.open(file_name[0])
+        img = img.convert('RGB')
         PhotoshopApp._bytes = BytesIO()
         img.save(PhotoshopApp._bytes, format='png')
         
@@ -101,8 +102,8 @@ class PhotoShopWidget(Widget):
                     print('clicked inside image, coords:', pixel_x, pixel_y)
 
                     # scale coordinates to actual pixels of the Image source
-                    actual_x = int(pixel_x * PhotoshopApp._image.texture_size[0] / PhotoshopApp._image.norm_image_size[0])
-                    actual_y = PhotoshopApp._image.texture_size[1] - int(pixel_y * PhotoshopApp._image.texture_size[1] / PhotoshopApp._image.norm_image_size[1])
+                    actual_x = round(pixel_x * PhotoshopApp._image.texture_size[0] / PhotoshopApp._image.norm_image_size[0])
+                    actual_y = PhotoshopApp._image.texture_size[1] - round(pixel_y * PhotoshopApp._image.texture_size[1] / PhotoshopApp._image.norm_image_size[1])
                     print('actual pixel coords:', actual_x, actual_y, '\n')
                     PhotoShopWidget.run_code(None, "change_pixel", x=actual_x, y=actual_y)
                     return True
