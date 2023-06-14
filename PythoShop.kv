@@ -10,7 +10,6 @@
         orientation: "vertical"
         FileChooserIconView:
             id: file_chooser
-            # rootpath: os.path.expanduser('~')
             filters: ['*.png', '*.jpg']
         Button:
             size_hint_max_y: 40
@@ -58,22 +57,18 @@
             #         rgb: 0, 1, 0
             #     Rectangle:
             #         size: self.size
-            Image:
-                size_hint: None, None
-                size: 24, 24
-                source: 'data/logo/kivy-icon-24.png'
-            Label:
-                height: 24
-                text_size: self.width, None
-                color: (1, 1, 1, .8)
-                text: 'PythoShop'
             Button:
-                size_hint_max_x: 100
-                size_hint_min_y: 100
-                text: 'No Red'
-                on_release: root.run_code('remove_red')
-            Button:
-                size_hint_max_x: 100
+                size_hint_max_x: 120
                 size_hint_min_y: 100
                 text: 'Load'
                 on_release: root.load_image()
+            Button:
+                size_hint_max_x: 120
+                size_hint_min_y: 100
+                text: 'Save'
+                on_release: root.save_image()
+            Button:
+                size_hint_max_x: 100
+                size_hint_min_y: 100
+                text: 'NoR'
+                on_release: root.run_code('remove_red')
