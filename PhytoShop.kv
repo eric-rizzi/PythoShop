@@ -20,6 +20,8 @@
 
 <PhotoShopWidget>:
     zoomer: zoomer
+    filter_button: filter_button
+    tool_button: tool_button
     BoxLayout:
         size: root.size
         orientation: 'vertical'
@@ -47,15 +49,22 @@
                 text: 'Load'
                 on_release: root.load_image()
             Button:
+                id: tool_button
+                text: 'select a tool'
+            Button:
+                id: filter_button
+                text: 'select a manipulation'
+            Button:
+                size_hint_max_x: 100
+                size_hint_min_y: 100
+                text: 'Apply'
+                on_release: root.apply_filter()
+            Button:
                 size_hint_max_x: 120
                 size_hint_min_y: 100
                 text: 'Save'
                 on_release: root.save_image()
-            Button:
-                size_hint_max_x: 100
-                size_hint_min_y: 100
-                text: 'NoR'
-                on_release: root.run_code('remove_red')
+
 
         BoxLayout:
             zindex: 100

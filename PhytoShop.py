@@ -54,6 +54,7 @@ class CustomDropDown(DropDown):
 class PhotoShopWidget(Widget):
     _file_chooser_popup = None
 
+
     def load_image(self):
         PhotoShopWidget._file_chooser_popup = Popup(
             title='Choose an image',
@@ -65,35 +66,29 @@ class PhotoShopWidget(Widget):
             img = Image.open(PhytoShopApp._bytes)
             img.save(os.path.join(os.path.expanduser('~'), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S")+".png"))
 
+    def run_manip_function(self, func, **kwargs):
+        print("Running", PhytoShopApp._filter_function)
+        try:
+            PhytoShopApp._bytes.seek(0)
+            img = Image.open(PhytoShopApp._bytes)
+            func(img, **kwargs)
+            PhytoShopApp._bytes = BytesIO()
+            img.save(PhytoShopApp._bytes, format='png')
+            PhytoShopApp._bytes.seek(0)
+            cimg = CoreImage(PhytoShopApp._bytes, ext='png')
+            PhytoShopApp._image.texture = cimg.texture
+            # to avoid anti-aliassing when we zoom in
+            PhytoShopApp._image.texture.mag_filter = 'nearest'
+            PhytoShopApp._image.texture.min_filter = 'nearest'
+        except SyntaxError:
+            print("Error: ", PhytoShopApp._filter_function.__name__, "generated an exception")
 
-    def run_code(self, fname, **kwargs):
-        print("Running", fname)
-        if PhytoShopApp._image:
-            # Find the function to be run
-            try:
-                spec = importlib.util.spec_from_file_location("imageManip", os.getcwd() + "/imageManip.py")
-                manip_module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(manip_module)
-                if fname in dir(manip_module):
-                    manip_func = getattr(manip_module, fname)
-                    PhytoShopApp._bytes.seek(0)
-                    img = Image.open(PhytoShopApp._bytes)
-                    manip_func(img, **kwargs)
-                    PhytoShopApp._bytes = BytesIO()
-                    img.save(PhytoShopApp._bytes, format='png')
-                    PhytoShopApp._bytes.seek(0)
-                    cimg = CoreImage(PhytoShopApp._bytes, ext='png')
-                    PhytoShopApp._image.texture = cimg.texture
-                    # to avoid anti-aliassing when we zoom in
-                    PhytoShopApp._image.texture.mag_filter = 'nearest'
-                    PhytoShopApp._image.texture.min_filter = 'nearest'
-                else:
-                    print("Function " + fname + "() is not available to test")
-            except SyntaxError:
-                print("imageManip.py has a syntax error and can't be executed")
+    def apply_filter(self, **kwargs):
+        if PhytoShopApp._image and PhytoShopApp._filter_function:
+            self.run_manip_function(PhytoShopApp._filter_function, **kwargs)
 
     def on_touch_down(self, touch):
-        if PhytoShopApp._image:
+        if PhytoShopApp._image and PhytoShopApp._tool_function:
             if not PhytoShopApp._image.parent.collide_point(*touch.pos):
                 return super().on_touch_down(touch)
             else:
@@ -121,7 +116,7 @@ class PhotoShopWidget(Widget):
                     actual_x = int(pixel_x * PhytoShopApp._image.texture_size[0] / PhytoShopApp._image.norm_image_size[0])
                     actual_y = PhytoShopApp._image.texture_size[1] - int(pixel_y * PhytoShopApp._image.texture_size[1] / PhytoShopApp._image.norm_image_size[1])
                     print('actual pixel coords:', actual_x, actual_y, '\n')
-                    PhotoShopWidget.run_code(None, "change_pixel", x=actual_x, y=actual_y)
+                    self.run_manip_function(PhytoShopApp._tool_function, x=actual_x, y=actual_y)
                     return True
         else:
             return super().on_touch_down(touch)
@@ -131,9 +126,46 @@ class PhytoShopApp(App):
     _bytes = None
     _image = None
     _root = None
+    _filter_function = None
+    _tool_function = None
 
     def build(self):
         PhytoShopApp._root =  PhotoShopWidget()
+        # Find the functions that can be run
+        try:
+            filter_dropdown = DropDown()
+            tool_dropdown = DropDown()
+            spec = importlib.util.spec_from_file_location("ImageManip", os.getcwd() + "/imageManip.py")
+            manip_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(manip_module)  # try to load it to see if we have a syntax error
+            for attribute in dir(manip_module):
+                thing = getattr(manip_module, attribute)
+                if callable(thing) and hasattr(thing, '__wrapped__') and hasattr(thing, '__type__'):
+                    if getattr(thing, '__type__') == 'filter':
+                        btn = Button(text=attribute, size_hint_y=None, height=44)
+                        btn.func = thing
+                        btn.bind(on_release=lambda btn: filter_dropdown.select(btn))
+                        filter_dropdown.add_widget(btn)
+                    elif getattr(thing, '__type__') == 'tool':
+                        btn = Button(text=attribute, size_hint_y=None, height=44)
+                        btn.func = thing
+                        btn.bind(on_release=lambda btn: tool_dropdown.select(btn))
+                        tool_dropdown.add_widget(btn)
+                    else:
+                        print("Error: unrecognized manipulation")
+            PhytoShopApp._root.filter_button.bind(on_release=filter_dropdown.open)
+            PhytoShopApp._root.tool_button.bind(on_release=tool_dropdown.open)
+            def select_filter(self, btn):
+                setattr(PhytoShopApp._root.filter_button, 'text', btn.text)
+                PhytoShopApp._filter_function = btn.func
+            filter_dropdown.bind(on_select=select_filter)
+            def select_tool(self, btn):
+                setattr(PhytoShopApp._root.tool_button, 'text', btn.text)
+                PhytoShopApp._tool_function = btn.func
+            tool_dropdown.bind(on_select=select_tool)
+        except SyntaxError:
+            print("Error: ImageManip.py has a syntax error and can't be executed")
+
         return PhytoShopApp._root
 
 
