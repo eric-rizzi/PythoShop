@@ -42,7 +42,7 @@ class FileChooserDialog(Widget):
         PhytoShopApp._image.texture.mag_filter = 'nearest'
         PhytoShopApp._image.texture.min_filter = 'nearest'
         PhytoShopApp._image.size_hint = [None, None]
-        PhytoShopApp._image.size = PhytoShopApp._root.size
+        PhytoShopApp._image.size = PhytoShopApp._root.zoomer.size
         # PhytoShopApp._image.pos = (0, 0)
         PhytoShopApp._root.zoomer.add_widget(PhytoShopApp._image)
 
@@ -118,8 +118,8 @@ class PhotoShopWidget(Widget):
                     print('clicked inside image, coords:', pixel_x, pixel_y)
 
                     # scale coordinates to actual pixels of the Image source
-                    actual_x = round(pixel_x * PhytoShopApp._image.texture_size[0] / PhytoShopApp._image.norm_image_size[0])
-                    actual_y = PhytoShopApp._image.texture_size[1] - round(pixel_y * PhytoShopApp._image.texture_size[1] / PhytoShopApp._image.norm_image_size[1])
+                    actual_x = int(pixel_x * PhytoShopApp._image.texture_size[0] / PhytoShopApp._image.norm_image_size[0])
+                    actual_y = PhytoShopApp._image.texture_size[1] - int(pixel_y * PhytoShopApp._image.texture_size[1] / PhytoShopApp._image.norm_image_size[1])
                     print('actual pixel coords:', actual_x, actual_y, '\n')
                     PhotoShopWidget.run_code(None, "change_pixel", x=actual_x, y=actual_y)
                     return True

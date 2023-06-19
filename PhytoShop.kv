@@ -20,8 +20,9 @@
 
 <PhotoShopWidget>:
     zoomer: zoomer
-    FloatLayout:
+    BoxLayout:
         size: root.size
+        orientation: 'vertical'
         canvas:
             Color:
                 rgb: 1, 1, 1
@@ -30,27 +31,10 @@
                 size: self.size
 
         BoxLayout:
-            Scatter:
-                id: zoomer
-                # size_hint: 1, 1
-                scale: 1
-                # valign: 'bottom'
-                # halign: 'left'
-                padding: 0
-                margin: 10
-                zindex: 100
-                do_rotation: False
-                auto_bring_to_front: False
-                # canvas: 
-                #     Color:
-                #         rgb: 1, 0, 0
-                #     Rectangle:
-                #         size: self.size
-        BoxLayout:
             padding: 10
             spacing: 10
             size_hint: 1, None
-            pos_hint: {'top': 1}
+            # pos_hint: {'top': 1}
             height: 60
             # canvas: 
             #     Color:
@@ -72,3 +56,27 @@
                 size_hint_min_y: 100
                 text: 'NoR'
                 on_release: root.run_code('remove_red')
+
+        BoxLayout:
+            zindex: 100
+            padding: 10
+            # canvas:
+            #     Color:
+            #         rgb: 0, 1, 0
+            Scatter:
+                id: zoomer
+                height: self.height
+                # size_hint: 1, 0.9
+                scale: 1
+                # valign: 'bottom'
+                # halign: 'left'
+                # padding: 10
+                # margin: 10
+                zindex: 100
+                do_rotation: False
+                auto_bring_to_front: False
+                # canvas: 
+                #     Color:
+                #         rgb: 1, 0, 0
+                #     Rectangle:
+                #         size: self.size
