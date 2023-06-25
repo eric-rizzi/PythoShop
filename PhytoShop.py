@@ -114,7 +114,7 @@ class PhotoShopWidget(Widget):
 
                     # scale coordinates to actual pixels of the Image source
                     actual_x = int(pixel_x * PhytoShopApp._image.texture_size[0] / PhytoShopApp._image.norm_image_size[0])
-                    actual_y = PhytoShopApp._image.texture_size[1] - int(pixel_y * PhytoShopApp._image.texture_size[1] / PhytoShopApp._image.norm_image_size[1])
+                    actual_y = (PhytoShopApp._image.texture_size[1] - 1) - int(pixel_y * PhytoShopApp._image.texture_size[1] / PhytoShopApp._image.norm_image_size[1])
                     print('actual pixel coords:', actual_x, actual_y, '\n')
                     self.run_manip_function(PhytoShopApp._tool_function, x=actual_x, y=actual_y)
                     return True
