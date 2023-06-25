@@ -13,11 +13,18 @@ def change_pixel(img, x=320, y=240, **kwargs):
     px[x, y] = (255, 0, 255)
 
 @export_tool
-def change_4_pixels(img, x=320, y=240, **kwargs):
+def change_9_pixels(img, x=320, y=240, **kwargs):
     px = img.load()
-    px[x, y] = (255, 0, 255)
-    px[x+1, y] = (255, 0, 255)
-    px[x, y+1] = (255, 0, 255)
+    px[x-1, y-1] = (255, 0, 255)
+    px[x  , y-1] = (255, 0, 255)
+    px[x+1, y-1] = (255, 0, 255)
+
+    px[x-1, y  ] = (255, 0, 255)
+    px[x  , y  ] = (255, 0, 255)
+    px[x+1, y  ] = (255, 0, 255)
+
+    px[x-1, y+1] = (255, 0, 255)
+    px[x  , y+1] = (255, 0, 255)
     px[x+1, y+1] = (255, 0, 255)
 
 @export_filter
