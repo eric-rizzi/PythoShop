@@ -51,15 +51,12 @@
                 on_release: root.load_image()
             Button:
                 id: tool_button
-                text: 'select a tool'
+                text: 'Select a tool'
+                # on_release: root.select_tool()
             Button:
                 id: filter_button
-                text: 'select a manipulation'
-            Button:
-                size_hint_max_x: 100
-                size_hint_min_y: 100
-                text: 'Apply'
-                on_release: root.apply_filter()
+                text: 'Apply filter'
+                # on_release: root.apply_tool()
             Button:
                 size_hint_max_x: 120
                 size_hint_min_y: 100
@@ -70,12 +67,12 @@
         BoxLayout:
             # zindex: 100
             padding: 0
-            canvas:
-                Color:
-                    rgb: 0, 1, 0
-                Rectangle:
-                    size: self.size
-                    pos: self.x, self.y
+            # canvas:
+            #     Color:
+            #         rgb: 0, 1, 0
+            #     Rectangle:
+            #         size: self.size
+            #         pos: self.x, self.y
             Scatter:
                 id: zoomer
                 height: self.height
@@ -87,6 +84,7 @@
                 # margin: 10
                 # zindex: 100
                 do_rotation: False
+                do_translation: False
                 auto_bring_to_front: False
                 # canvas: 
                 #     Color:
@@ -98,16 +96,8 @@
             padding: 10
             spacing: 10
             size_hint: 1, None
-            # pos_hint: {'top': 1}
             height: 60
-            # canvas: 
-            #     Color:
-            #         rgb: 0, 1, 0
-            #     Rectangle:
-            #         size: self.size
             Button:
                 id: color_button
-                # size_hint_max_x: 120
-                # size_hint_min_y: 100
                 text: 'Change Color'
                 on_release: root.toggle_color()

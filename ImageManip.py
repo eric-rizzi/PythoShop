@@ -13,19 +13,19 @@ def change_pixel(img, x=320, y=240, color=(255, 0, 255), **kwargs):
     px[x, y] = color
 
 @export_tool
-def change_9_pixels(img, x=320, y=240, **kwargs):
+def change_9_pixels(img, x=320, y=240, color=(255, 0, 255), **kwargs):
     px = img.load()
-    px[x-1, y-1] = (255, 0, 255)
-    px[x  , y-1] = (255, 0, 255)
-    px[x+1, y-1] = (255, 0, 255)
+    px[x-1, y-1] = color
+    px[x  , y-1] = color
+    px[x+1, y-1] = color
 
-    px[x-1, y  ] = (255, 0, 255)
-    px[x  , y  ] = (255, 0, 255)
-    px[x+1, y  ] = (255, 0, 255)
+    px[x-1, y  ] = color
+    px[x  , y  ] = color
+    px[x+1, y  ] = color
 
-    px[x-1, y+1] = (255, 0, 255)
-    px[x  , y+1] = (255, 0, 255)
-    px[x+1, y+1] = (255, 0, 255)
+    px[x-1, y+1] = color
+    px[x  , y+1] = color
+    px[x+1, y+1] = color
 
 @export_filter
 def remove_red(img, **kwargs):

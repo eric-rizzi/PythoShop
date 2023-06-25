@@ -17,6 +17,23 @@ import inspect
 import time
 from kivy.uix.colorpicker import ColorPicker
 
+def run_manip_function(func, **kwargs):
+    print("Running", func)
+    try:
+        PhytoShopApp._bytes.seek(0)
+        img = Image.open(PhytoShopApp._bytes)
+        func(img, **kwargs)
+        PhytoShopApp._bytes = BytesIO()
+        img.save(PhytoShopApp._bytes, format='png')
+        PhytoShopApp._bytes.seek(0)
+        cimg = CoreImage(PhytoShopApp._bytes, ext='png')
+        PhytoShopApp._image.texture = cimg.texture
+        # to avoid anti-aliassing when we zoom in
+        PhytoShopApp._image.texture.mag_filter = 'nearest'
+        PhytoShopApp._image.texture.min_filter = 'nearest'
+    except SyntaxError:
+        print("Error: ", PhytoShopApp._filter_function.__name__, "generated an exception")
+
 
 class FileChooserDialog(Widget):
     def __init__(self, **kwargs):
@@ -44,55 +61,42 @@ class FileChooserDialog(Widget):
         PhytoShopApp._image.texture.min_filter = 'nearest'
         PhytoShopApp._image.size_hint = [None, None]
         PhytoShopApp._image.size = PhytoShopApp._root.zoomer.size
-        # PhytoShopApp._image.pos = (0, 0)
+        PhytoShopApp._image.pos = (0, 0)
         PhytoShopApp._root.zoomer.add_widget(PhytoShopApp._image, 100)
 
 
 class PhotoShopWidget(Widget):
     _file_chooser_popup = None
 
+    # def select_tool(self):
+    #     PhytoShopApp._tool_dropdown.open(PhytoShopApp._root)
+
+    # def apply_filter(self):
+    #     PhytoShopApp._filter_dropdown.open(PhytoShopApp._root)
+
     def toggle_color(self):
         if PhytoShopApp._color_picker.is_visible:
             PhytoShopApp._root.children[0].remove_widget(PhytoShopApp._color_picker)
             PhytoShopApp._color_picker.is_visible = False
-            PhytoShopApp._color_picker.text = "Change Color"
+            PhytoShopApp._root.color_button.text = "Change Color"
         else:
             PhytoShopApp._root.children[0].add_widget(PhytoShopApp._color_picker)
             PhytoShopApp._color_picker.is_visible = True
-            PhytoShopApp._color_picker.text = "Set Color"
+            PhytoShopApp._root.color_button.text = "Set Color"
 
 
     def load_image(self):
-        PhotoShopWidget._file_chooser_popup = Popup(
-            title='Choose an image',
-            content=FileChooserDialog(rootpath=os.path.expanduser('~')))
+        if not PhotoShopWidget._file_chooser_popup:
+            PhotoShopWidget._file_chooser_popup = Popup(
+                title='Choose an image',
+                content=FileChooserDialog(rootpath=os.path.expanduser('~')))
+            # PhotoShopWidget._file_chooser_popup.auto_dismiss = True
         PhotoShopWidget._file_chooser_popup.open()
 
     def save_image(self):
         if PhytoShopApp._image:
             img = Image.open(PhytoShopApp._bytes)
             img.save(os.path.join(os.path.expanduser('~'), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S")+".png"))
-
-    def run_manip_function(self, func, **kwargs):
-        print("Running", PhytoShopApp._filter_function)
-        try:
-            PhytoShopApp._bytes.seek(0)
-            img = Image.open(PhytoShopApp._bytes)
-            func(img, **kwargs)
-            PhytoShopApp._bytes = BytesIO()
-            img.save(PhytoShopApp._bytes, format='png')
-            PhytoShopApp._bytes.seek(0)
-            cimg = CoreImage(PhytoShopApp._bytes, ext='png')
-            PhytoShopApp._image.texture = cimg.texture
-            # to avoid anti-aliassing when we zoom in
-            PhytoShopApp._image.texture.mag_filter = 'nearest'
-            PhytoShopApp._image.texture.min_filter = 'nearest'
-        except SyntaxError:
-            print("Error: ", PhytoShopApp._filter_function.__name__, "generated an exception")
-
-    def apply_filter(self, **kwargs):
-        if PhytoShopApp._image and PhytoShopApp._filter_function:
-            self.run_manip_function(PhytoShopApp._filter_function, **kwargs)
 
     def on_touch_down(self, touch):
         if PhytoShopApp._image and PhytoShopApp._tool_function:
@@ -129,7 +133,7 @@ class PhotoShopWidget(Widget):
                         int(PhytoShopApp._root.color_button.background_color[2]*255)
                     )
                     # chosen_color = (255, 0, 255)
-                    self.run_manip_function(PhytoShopApp._tool_function, x=actual_x, y=actual_y, color=chosen_color)
+                    run_manip_function(PhytoShopApp._tool_function, x=actual_x, y=actual_y, color=chosen_color)
                     return True
         else:
             return super().on_touch_down(touch)
@@ -139,7 +143,6 @@ class PhytoShopApp(App):
     _bytes = None
     _image = None
     _root = None
-    _filter_function = None
     _tool_function = None
     _color_picker = None
     _first_color = True
@@ -162,9 +165,9 @@ class PhytoShopApp(App):
         PhytoShopApp._root =  PhotoShopWidget()
         # Find the functions that can be run
         try:
-            filter_dropdown = DropDown()
-            tool_dropdown = DropDown()
-            color_dropdown = DropDown()
+            PhytoShopApp._filter_dropdown = DropDown()
+            PhytoShopApp._tool_dropdown = DropDown()
+            PhytoShopApp._color_dropdown = DropDown()
             PhytoShopApp._color_picker = ColorPicker()
             PhytoShopApp._color_picker.children[0].children[1].children[4].disabled = True  # disable the alpha chanel
             PhytoShopApp._color_picker.bind(color=PhytoShopApp.on_color)
@@ -181,26 +184,27 @@ class PhytoShopApp(App):
                     if getattr(thing, '__type__') == 'filter':
                         btn = Button(text=attribute, size_hint_y=None, height=44)
                         btn.func = thing
-                        btn.bind(on_release=lambda btn: filter_dropdown.select(btn))
-                        filter_dropdown.add_widget(btn)
+                        btn.bind(on_release=lambda btn: PhytoShopApp._filter_dropdown.select(btn))
+                        PhytoShopApp._filter_dropdown.add_widget(btn)
                     elif getattr(thing, '__type__') == 'tool':
                         btn = Button(text=attribute, size_hint_y=None, height=44)
                         btn.func = thing
-                        btn.bind(on_release=lambda btn: tool_dropdown.select(btn))
-                        tool_dropdown.add_widget(btn)
+                        btn.bind(on_release=lambda btn: PhytoShopApp._tool_dropdown.select(btn))
+                        PhytoShopApp._tool_dropdown.add_widget(btn)
                     else:
                         print("Error: unrecognized manipulation")
-            PhytoShopApp._root.filter_button.bind(on_release=filter_dropdown.open)
-            PhytoShopApp._root.tool_button.bind(on_release=tool_dropdown.open)
-            PhytoShopApp._root.color_button.bind(on_release=color_dropdown.open)
+            PhytoShopApp._root.filter_button.bind(on_release=PhytoShopApp._filter_dropdown.open)
+            PhytoShopApp._root.tool_button.bind(on_release=PhytoShopApp._tool_dropdown.open)
+            # PhytoShopApp._root.color_button.bind(on_release=color_dropdown.open)
             def select_filter(self, btn):
-                setattr(PhytoShopApp._root.filter_button, 'text', btn.text)
-                PhytoShopApp._filter_function = btn.func
-            filter_dropdown.bind(on_select=select_filter)
+                if PhytoShopApp._image:
+                    run_manip_function(btn.func)
+            PhytoShopApp._filter_dropdown.bind(on_select=select_filter)
+
             def select_tool(self, btn):
                 setattr(PhytoShopApp._root.tool_button, 'text', btn.text)
                 PhytoShopApp._tool_function = btn.func
-            tool_dropdown.bind(on_select=select_tool)
+            PhytoShopApp._tool_dropdown.bind(on_select=select_tool)
         except SyntaxError:
             print("Error: ImageManip.py has a syntax error and can't be executed")
 
