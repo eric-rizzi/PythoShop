@@ -22,6 +22,7 @@
     zoomer: zoomer
     filter_button: filter_button
     tool_button: tool_button
+    color_button: color_button
     BoxLayout:
         size: root.size
         orientation: 'vertical'
@@ -67,11 +68,14 @@
 
 
         BoxLayout:
-            zindex: 100
+            # zindex: 100
             padding: 0
-            # canvas:
-            #     Color:
-            #         rgb: 0, 1, 0
+            canvas:
+                Color:
+                    rgb: 0, 1, 0
+                Rectangle:
+                    size: self.size
+                    pos: self.x, self.y
             Scatter:
                 id: zoomer
                 height: self.height
@@ -81,7 +85,7 @@
                 # halign: 'left'
                 # padding: 10
                 # margin: 10
-                zindex: 100
+                # zindex: 100
                 do_rotation: False
                 auto_bring_to_front: False
                 # canvas: 
@@ -89,3 +93,21 @@
                 #         rgb: 1, 0, 0
                 #     Rectangle:
                 #         size: self.size
+
+        BoxLayout:
+            padding: 10
+            spacing: 10
+            size_hint: 1, None
+            # pos_hint: {'top': 1}
+            height: 60
+            # canvas: 
+            #     Color:
+            #         rgb: 0, 1, 0
+            #     Rectangle:
+            #         size: self.size
+            Button:
+                id: color_button
+                # size_hint_max_x: 120
+                # size_hint_min_y: 100
+                text: 'Change Color'
+                on_release: root.toggle_color()

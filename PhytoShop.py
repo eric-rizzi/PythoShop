@@ -15,6 +15,7 @@ from random import random
 import importlib.util
 import inspect
 import time
+from kivy.uix.colorpicker import ColorPicker
 
 
 class FileChooserDialog(Widget):
@@ -44,15 +45,21 @@ class FileChooserDialog(Widget):
         PhytoShopApp._image.size_hint = [None, None]
         PhytoShopApp._image.size = PhytoShopApp._root.zoomer.size
         # PhytoShopApp._image.pos = (0, 0)
-        PhytoShopApp._root.zoomer.add_widget(PhytoShopApp._image)
-
-
-class CustomDropDown(DropDown):
-    pass
+        PhytoShopApp._root.zoomer.add_widget(PhytoShopApp._image, 100)
 
 
 class PhotoShopWidget(Widget):
     _file_chooser_popup = None
+
+    def toggle_color(self):
+        if PhytoShopApp._color_picker.is_visible:
+            PhytoShopApp._root.children[0].remove_widget(PhytoShopApp._color_picker)
+            PhytoShopApp._color_picker.is_visible = False
+            PhytoShopApp._color_picker.text = "Change Color"
+        else:
+            PhytoShopApp._root.children[0].add_widget(PhytoShopApp._color_picker)
+            PhytoShopApp._color_picker.is_visible = True
+            PhytoShopApp._color_picker.text = "Set Color"
 
 
     def load_image(self):
@@ -98,15 +105,15 @@ class PhotoShopWidget(Widget):
                 print("Touch Cords", touch.x, touch.y)
                 print('Size of image within ImageView widget:', PhytoShopApp._image.norm_image_size)
                 print('ImageView widget:, pos:', PhytoShopApp._image.pos, ', size:', PhytoShopApp._image.size)
-                print('image extents in x:', PhytoShopApp._image.x + lr_space, PhytoShopApp._image.right - lr_space)
-                print('image extents in y:', PhytoShopApp._image.y + tb_space, PhytoShopApp._image.top - tb_space)
-                pixel_x = touch.x - lr_space - PhytoShopApp._image.x  # x coordinate of touch measured from lower left of actual image
-                pixel_y = touch.y - tb_space - PhytoShopApp._image.y  # y coordinate of touch measured from lower left of actual image
+                print('image extents in x:', PhytoShopApp._root.zoomer.x + lr_space, PhytoShopApp._image.right - lr_space)
+                print('image extents in y:', PhytoShopApp._root.zoomer.y + tb_space, PhytoShopApp._image.top - tb_space)
+                pixel_x = touch.x - lr_space - PhytoShopApp._root.zoomer.x  # x coordinate of touch measured from lower left of actual image
+                pixel_y = touch.y - tb_space - PhytoShopApp._root.zoomer.y  # y coordinate of touch measured from lower left of actual image
                 if pixel_x < 0 or pixel_y < 0:
                     print('clicked outside of image\n')
                     return super().on_touch_down(touch)
-                elif pixel_x > PhytoShopApp._image.norm_image_size[0] or \
-                        pixel_y > PhytoShopApp._image.norm_image_size[1]:
+                elif pixel_x >= PhytoShopApp._image.norm_image_size[0] or \
+                        pixel_y >= PhytoShopApp._image.norm_image_size[1]:
                     print('clicked outside of image\n')
                     return super().on_touch_down(touch)
                 else:
@@ -116,7 +123,13 @@ class PhotoShopWidget(Widget):
                     actual_x = int(pixel_x * PhytoShopApp._image.texture_size[0] / PhytoShopApp._image.norm_image_size[0])
                     actual_y = (PhytoShopApp._image.texture_size[1] - 1) - int(pixel_y * PhytoShopApp._image.texture_size[1] / PhytoShopApp._image.norm_image_size[1])
                     print('actual pixel coords:', actual_x, actual_y, '\n')
-                    self.run_manip_function(PhytoShopApp._tool_function, x=actual_x, y=actual_y)
+                    chosen_color = (
+                        int(PhytoShopApp._root.color_button.background_color[0]*255), 
+                        int(PhytoShopApp._root.color_button.background_color[1]*255), 
+                        int(PhytoShopApp._root.color_button.background_color[2]*255)
+                    )
+                    # chosen_color = (255, 0, 255)
+                    self.run_manip_function(PhytoShopApp._tool_function, x=actual_x, y=actual_y, color=chosen_color)
                     return True
         else:
             return super().on_touch_down(touch)
@@ -128,6 +141,22 @@ class PhytoShopApp(App):
     _root = None
     _filter_function = None
     _tool_function = None
+    _color_picker = None
+    _first_color = True
+
+    def on_color(instance, value):
+        my_value = value.copy()  # we ignore the alpha chanel
+        my_value[3] = 1
+        PhytoShopApp._root.color_button.background_normal = ''
+        PhytoShopApp._root.color_button.background_color = my_value
+        if (value[0] + value[1] + value[2]) * value[3] > 1.5:
+            PhytoShopApp._root.color_button.color = [0, 0, 0, 1]
+        else:
+            PhytoShopApp._root.color_button.color = [1, 1, 1, 1]
+        if not PhytoShopApp._first_color:
+            PhytoShopApp._root.color_button.text = "Set Color"
+        else:
+            PhytoShopApp._first_color = False
 
     def build(self):
         PhytoShopApp._root =  PhotoShopWidget()
@@ -135,6 +164,14 @@ class PhytoShopApp(App):
         try:
             filter_dropdown = DropDown()
             tool_dropdown = DropDown()
+            color_dropdown = DropDown()
+            PhytoShopApp._color_picker = ColorPicker()
+            PhytoShopApp._color_picker.children[0].children[1].children[4].disabled = True  # disable the alpha chanel
+            PhytoShopApp._color_picker.bind(color=PhytoShopApp.on_color)
+            PhytoShopApp._color_picker.is_visible = False
+            # color_dropdown.container.add_widget(cp)
+            # self._root.children[0].add_widget(PhytoShopApp._color_picker)
+
             spec = importlib.util.spec_from_file_location("ImageManip", os.getcwd() + "/imageManip.py")
             manip_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(manip_module)  # try to load it to see if we have a syntax error
@@ -155,6 +192,7 @@ class PhytoShopApp(App):
                         print("Error: unrecognized manipulation")
             PhytoShopApp._root.filter_button.bind(on_release=filter_dropdown.open)
             PhytoShopApp._root.tool_button.bind(on_release=tool_dropdown.open)
+            PhytoShopApp._root.color_button.bind(on_release=color_dropdown.open)
             def select_filter(self, btn):
                 setattr(PhytoShopApp._root.filter_button, 'text', btn.text)
                 PhytoShopApp._filter_function = btn.func

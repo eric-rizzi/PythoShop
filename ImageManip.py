@@ -8,9 +8,9 @@ def distance(color1, color2):
     return rdiff + gdiff + bdiff
 
 @export_tool
-def change_pixel(img, x=320, y=240, **kwargs):
+def change_pixel(img, x=320, y=240, color=(255, 0, 255), **kwargs):
     px = img.load()
-    px[x, y] = (255, 0, 255)
+    px[x, y] = color
 
 @export_tool
 def change_9_pixels(img, x=320, y=240, **kwargs):
