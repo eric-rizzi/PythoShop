@@ -68,12 +68,6 @@ class FileChooserDialog(Widget):
 class PhotoShopWidget(Widget):
     _file_chooser_popup = None
 
-    # def select_tool(self):
-    #     PhytoShopApp._tool_dropdown.open(PhytoShopApp._root)
-
-    # def apply_filter(self):
-    #     PhytoShopApp._filter_dropdown.open(PhytoShopApp._root)
-
     def toggle_color(self):
         if PhytoShopApp._color_picker.is_visible:
             PhytoShopApp._root.children[0].remove_widget(PhytoShopApp._color_picker)
@@ -90,7 +84,6 @@ class PhotoShopWidget(Widget):
             PhotoShopWidget._file_chooser_popup = Popup(
                 title='Choose an image',
                 content=FileChooserDialog(rootpath=os.path.expanduser('~')))
-            # PhotoShopWidget._file_chooser_popup.auto_dismiss = True
         PhotoShopWidget._file_chooser_popup.open()
 
     def save_image(self):
@@ -172,8 +165,6 @@ class PhytoShopApp(App):
             PhytoShopApp._color_picker.children[0].children[1].children[4].disabled = True  # disable the alpha chanel
             PhytoShopApp._color_picker.bind(color=PhytoShopApp.on_color)
             PhytoShopApp._color_picker.is_visible = False
-            # color_dropdown.container.add_widget(cp)
-            # self._root.children[0].add_widget(PhytoShopApp._color_picker)
 
             spec = importlib.util.spec_from_file_location("ImageManip", os.getcwd() + "/imageManip.py")
             manip_module = importlib.util.module_from_spec(spec)
@@ -195,7 +186,6 @@ class PhytoShopApp(App):
                         print("Error: unrecognized manipulation")
             PhytoShopApp._root.filter_button.bind(on_release=PhytoShopApp._filter_dropdown.open)
             PhytoShopApp._root.tool_button.bind(on_release=PhytoShopApp._tool_dropdown.open)
-            # PhytoShopApp._root.color_button.bind(on_release=color_dropdown.open)
             def select_filter(self, btn):
                 if PhytoShopApp._image:
                     run_manip_function(btn.func)
