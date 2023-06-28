@@ -20,9 +20,14 @@ from kivy.uix.colorpicker import ColorPicker
 def run_manip_function(func, **kwargs):
     print("Running", func)
     try:
+        chosen_color = (
+            int(PythoShopApp._root.color_button.background_color[0]*255), 
+            int(PythoShopApp._root.color_button.background_color[1]*255), 
+            int(PythoShopApp._root.color_button.background_color[2]*255)
+        )
         PythoShopApp._bytes.seek(0)
         img = Image.open(PythoShopApp._bytes)
-        func(img, **kwargs)
+        func(img, color=chosen_color, **kwargs)
         PythoShopApp._bytes = BytesIO()
         img.save(PythoShopApp._bytes, format='png')
         PythoShopApp._bytes.seek(0)
@@ -32,7 +37,7 @@ def run_manip_function(func, **kwargs):
         PythoShopApp._image.texture.mag_filter = 'nearest'
         PythoShopApp._image.texture.min_filter = 'nearest'
     except SyntaxError:
-        print("Error: ", PythoShopApp._filter_function.__name__, "generated an exception")
+        print("Error: ", func.__name__, "generated an exception")
 
 
 class FileChooserDialog(Widget):
@@ -125,8 +130,7 @@ class PhotoShopWidget(Widget):
                         int(PythoShopApp._root.color_button.background_color[1]*255), 
                         int(PythoShopApp._root.color_button.background_color[2]*255)
                     )
-                    # chosen_color = (255, 0, 255)
-                    run_manip_function(PythoShopApp._tool_function, x=actual_x, y=actual_y, color=chosen_color)
+                    run_manip_function(PythoShopApp._tool_function, x=actual_x, y=actual_y)
                     return True
         else:
             return super().on_touch_down(touch)
