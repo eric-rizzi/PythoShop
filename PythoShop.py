@@ -25,9 +25,10 @@ def run_manip_function(func, **kwargs):
             int(PythoShopApp._root.color_button.background_color[1]*255), 
             int(PythoShopApp._root.color_button.background_color[2]*255)
         )
+        extra_input = PythoShopApp._root.extra_input.text
         PythoShopApp._bytes.seek(0)
         img = Image.open(PythoShopApp._bytes)
-        func(img, color=chosen_color, **kwargs)
+        func(img, color=chosen_color, extra=extra_input, **kwargs)
         PythoShopApp._bytes = BytesIO()
         img.save(PythoShopApp._bytes, format='png')
         PythoShopApp._bytes.seek(0)
@@ -125,12 +126,7 @@ class PhotoShopWidget(Widget):
                     actual_x = int(pixel_x * PythoShopApp._image.texture_size[0] / PythoShopApp._image.norm_image_size[0])
                     actual_y = (PythoShopApp._image.texture_size[1] - 1) - int(pixel_y * PythoShopApp._image.texture_size[1] / PythoShopApp._image.norm_image_size[1])
                     print('actual pixel coords:', actual_x, actual_y, '\n')
-                    chosen_color = (
-                        int(PythoShopApp._root.color_button.background_color[0]*255), 
-                        int(PythoShopApp._root.color_button.background_color[1]*255), 
-                        int(PythoShopApp._root.color_button.background_color[2]*255)
-                    )
-                    run_manip_function(PythoShopApp._tool_function, x=actual_x, y=actual_y)
+                    run_manip_function(PythoShopApp._tool_function, clicked_x=actual_x, clicked_y=actual_y)
                     return True
         else:
             return super().on_touch_down(touch)

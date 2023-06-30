@@ -23,6 +23,7 @@
     filter_button: filter_button
     tool_button: tool_button
     color_button: color_button
+    extra_input: extra_input
     BoxLayout:
         size: root.size
         orientation: 'vertical'
@@ -94,8 +95,13 @@
             padding: 10
             spacing: 10
             size_hint: 1, None
-            height: 60
+            height: 70
             Button:
                 id: color_button
                 text: 'Change Color'
                 on_release: root.toggle_color()
+            TextInput:
+                id: extra_input
+                text: 'extra parameter...'
+
+
