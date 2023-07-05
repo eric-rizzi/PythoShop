@@ -131,6 +131,27 @@ class PhotoShopWidget(Widget):
         else:
             return super().on_touch_down(touch)
         
+    def on_touch_move(self, touch):
+        if PythoShopApp._image and PythoShopApp._tool_function:
+            if not PythoShopApp._image.parent.collide_point(*touch.pos):
+                return super().on_touch_move(touch)
+            else:
+                lr_space = (PythoShopApp._image.width - PythoShopApp._image.norm_image_size[0]) / 2  # empty space in Image widget left and right of actual image
+                tb_space = (PythoShopApp._image.height - PythoShopApp._image.norm_image_size[1]) / 2  # empty space in Image widget above and below actual image
+                pixel_x = touch.x - lr_space - PythoShopApp._root.zoomer.x  # x coordinate of touch measured from lower left of actual image
+                pixel_y = touch.y - tb_space - PythoShopApp._root.zoomer.y  # y coordinate of touch measured from lower left of actual image
+                if pixel_x < 0 or pixel_y < 0:
+                    return super().on_touch_move(touch)
+                elif pixel_x >= PythoShopApp._image.norm_image_size[0] or pixel_y >= PythoShopApp._image.norm_image_size[1]:
+                    return super().on_touch_move(touch)
+                else:
+                    actual_x = int(pixel_x * PythoShopApp._image.texture_size[0] / PythoShopApp._image.norm_image_size[0])
+                    actual_y = (PythoShopApp._image.texture_size[1] - 1) - int(pixel_y * PythoShopApp._image.texture_size[1] / PythoShopApp._image.norm_image_size[1])
+                    run_manip_function(PythoShopApp._tool_function, clicked_x=actual_x, clicked_y=actual_y)
+                    return True
+        else:
+            return super().on_touch_move(touch)
+
 
 class PythoShopApp(App):
     _bytes = None
