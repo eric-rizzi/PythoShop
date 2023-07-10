@@ -16,6 +16,8 @@ import importlib.util
 import inspect
 import time
 from kivy.uix.colorpicker import ColorPicker
+from kivy.core.window import Window
+
 
 def run_manip_function(func, **kwargs):
     print("Running", func)
@@ -175,7 +177,13 @@ class PythoShopApp(App):
         else:
             PythoShopApp._first_color = False
 
+
+    def _on_file_drop(self, window, file_path):
+        PythoShopApp._root.extra_input.text = file_path
+
+
     def build(self):
+        Window.bind(on_dropfile=self._on_file_drop)
         PythoShopApp._root =  PhotoShopWidget()
         # Find the functions that can be run
         try:
