@@ -30,9 +30,16 @@ def run_manip_function(func, **kwargs):
         extra_input = PythoShopApp._root.extra_input.text
         PythoShopApp._bytes.seek(0)
         img = Image.open(PythoShopApp._bytes)
-        func(img, color=chosen_color, extra=extra_input, **kwargs)
+        result = func(img, color=chosen_color, extra=extra_input, **kwargs)
         PythoShopApp._bytes = BytesIO()
-        img.save(PythoShopApp._bytes, format='png')
+        if func.__return_type__ == Image.Image.__class__:
+            if result is None:
+                raise Exception("Function", func.__name__, "should have returned an image but instead returned nothing")
+            if result.__class__ != Image.Image:
+                raise Exception("Function", func.__name__, "should have returned an image but instead returned something else")
+            result.save(PythoShopApp._bytes, format='png')
+        else:
+            img.save(PythoShopApp._bytes, format='png')
         PythoShopApp._bytes.seek(0)
         cimg = CoreImage(PythoShopApp._bytes, ext='png')
         PythoShopApp._image.texture = cimg.texture

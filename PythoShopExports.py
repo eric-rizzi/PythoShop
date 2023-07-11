@@ -1,17 +1,26 @@
 import functools
+from PIL import Image
 
 def export_filter(func):
-    # __type__ = "filter"
     func.__type__ = "filter"
+    func.__return_type__ = None
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        func(*args, **kwargs)
+        return func(*args, **kwargs)
+    return wrapper
+
+def export_filter_returns_image(func):
+    func.__type__ = "filter"
+    func.__return_type__ = Image.Image.__class__
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
     return wrapper
 
 def export_tool(func):
-    # __type__ = "tool"
     func.__type__ = "tool"
+    func.__return_type__ = None
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        func(*args, **kwargs)
+        return func(*args, **kwargs)
     return wrapper
