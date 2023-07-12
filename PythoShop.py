@@ -19,6 +19,20 @@ from kivy.uix.colorpicker import ColorPicker
 from kivy.core.window import Window
 
 
+def _set_extra(value):
+    PythoShopApp._root.extra_input.text = value
+
+
+def _select_coordinate(x, y):
+    _set_extra(str(x) + ", " + str(y))
+
+
+def _select_color(x, y):
+    img = Image.open(PythoShopApp._bytes)
+    r, g, b = img.getpixel((x, y))
+    _set_extra(str(r) + ", " + str(g) + ", " + str(b))
+
+
 def run_manip_function(func, **kwargs):
     print("Running", func)
     try:
@@ -135,7 +149,11 @@ class PhotoShopWidget(Widget):
                     actual_x = int(pixel_x * PythoShopApp._image.texture_size[0] / PythoShopApp._image.norm_image_size[0])
                     actual_y = (PythoShopApp._image.texture_size[1] - 1) - int(pixel_y * PythoShopApp._image.texture_size[1] / PythoShopApp._image.norm_image_size[1])
                     print('actual pixel coords:', actual_x, actual_y, '\n')
-                    run_manip_function(PythoShopApp._tool_function, clicked_x=actual_x, clicked_y=actual_y)
+                    # Note: can't call your manip functions "_select_"
+                    if PythoShopApp._tool_function.__name__[:8] == "_select_":
+                        PythoShopApp._tool_function(actual_x, actual_y)
+                    else:
+                        run_manip_function(PythoShopApp._tool_function, clicked_x=actual_x, clicked_y=actual_y)
                     return True
         else:
             return super().on_touch_down(touch)
@@ -156,7 +174,10 @@ class PhotoShopWidget(Widget):
                 else:
                     actual_x = int(pixel_x * PythoShopApp._image.texture_size[0] / PythoShopApp._image.norm_image_size[0])
                     actual_y = (PythoShopApp._image.texture_size[1] - 1) - int(pixel_y * PythoShopApp._image.texture_size[1] / PythoShopApp._image.norm_image_size[1])
-                    run_manip_function(PythoShopApp._tool_function, clicked_x=actual_x, clicked_y=actual_y)
+                    if PythoShopApp._tool_function.__name__[:8] == "_select_":
+                        PythoShopApp._tool_function(actual_x, actual_y)
+                    else:
+                        run_manip_function(PythoShopApp._tool_function, clicked_x=actual_x, clicked_y=actual_y)
                     return True
         else:
             return super().on_touch_move(touch)
@@ -201,6 +222,16 @@ class PythoShopApp(App):
             PythoShopApp._color_picker.children[0].children[1].children[4].disabled = True  # disable the alpha chanel
             PythoShopApp._color_picker.bind(color=PythoShopApp.on_color)
             PythoShopApp._color_picker.is_visible = False
+
+            # Selection tools come first
+            select_coord_button = Button(text='Select coordinate', size_hint_y=None, height=44)
+            select_coord_button.func = _select_coordinate
+            select_coord_button.bind(on_release=lambda btn: PythoShopApp._tool_dropdown.select(btn))
+            PythoShopApp._tool_dropdown.add_widget(select_coord_button)
+            select_color_button = Button(text='Select color', size_hint_y=None, height=44)
+            select_color_button.func = _select_color
+            select_color_button.bind(on_release=lambda btn: PythoShopApp._tool_dropdown.select(btn))
+            PythoShopApp._tool_dropdown.add_widget(select_color_button)
 
             spec = importlib.util.spec_from_file_location("ImageManip", os.getcwd() + "/imageManip.py")
             manip_module = importlib.util.module_from_spec(spec)
