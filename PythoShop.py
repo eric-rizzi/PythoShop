@@ -28,6 +28,8 @@ def _select_coordinate(x, y):
 
 
 def _select_color(x, y):
+    if PythoShopApp._root.images_tab.current_tab == PythoShopApp._root.primary_tab:
+        pass
     img = Image.open(PythoShopApp._bytes)
     r, g, b = img.getpixel((x, y))
     _set_extra(str(r) + ", " + str(g) + ", " + str(b))
@@ -35,6 +37,22 @@ def _select_color(x, y):
 
 def run_manip_function(func, **kwargs):
     print("Running", func)
+    if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+        image1 = PythoShopApp._image1
+        bytes1 = PythoShopApp._bytes1
+        scatter1 = PythoShopApp._root.image1
+        image2 = PythoShopApp._image2
+        bytes2 = PythoShopApp._bytes2
+        scatter2 = PythoShopApp._root.image2
+    elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
+        image1 = PythoShopApp._image2
+        bytes1 = PythoShopApp._bytes2
+        scatter1 = PythoShopApp._root.image2
+        image2 = PythoShopApp._image1
+        bytes2 = PythoShopApp._bytes1
+        scatter2 = PythoShopApp._root.image1
+    else:
+        raise Exception("Neither image tab was selected (which shouldn't be possible)")
     try:
         chosen_color = (
             int(PythoShopApp._root.color_button.background_color[0]*255), 
@@ -42,24 +60,43 @@ def run_manip_function(func, **kwargs):
             int(PythoShopApp._root.color_button.background_color[2]*255)
         )
         extra_input = PythoShopApp._root.extra_input.text
-        PythoShopApp._bytes.seek(0)
-        img = Image.open(PythoShopApp._bytes)
-        result = func(img, color=chosen_color, extra=extra_input, **kwargs)
-        PythoShopApp._bytes = BytesIO()
+        bytes1.seek(0)
+        img1 = Image.open(bytes1)
+        if bytes2:
+            bytes2.seek(0)
+            img2 = Image.open(bytes2)
+        else:
+            img2 = None
+        result = func(img1, other_image=img2, color=chosen_color, extra=extra_input, **kwargs)
         if func.__return_type__ == Image.Image.__class__:
             if result is None:
                 raise Exception("Function", func.__name__, "should have returned an image but instead returned nothing")
             if result.__class__ != Image.Image:
                 raise Exception("Function", func.__name__, "should have returned an image but instead returned something else")
-            result.save(PythoShopApp._bytes, format='png')
+            if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+                PythoShopApp._bytes1 = BytesIO()
+                result.save(PythoShopApp._bytes1, format='png')
+            elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
+                PythoShopApp._bytes2 = BytesIO()
+                result.save(PythoShopApp._bytes2, format='png')
+            else:
+                raise Exception("No bytes to set")
         else:
-            img.save(PythoShopApp._bytes, format='png')
-        PythoShopApp._bytes.seek(0)
-        cimg = CoreImage(PythoShopApp._bytes, ext='png')
-        PythoShopApp._image.texture = cimg.texture
+            bytes = BytesIO()
+            if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+                PythoShopApp._bytes1 = bytes
+            elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
+                PythoShopApp._bytes2 = bytes
+            else:
+                raise Exception("Neither image tab was selected (which shouldn't be possible)")
+            img1.save(bytes, format='png')
+        
+        bytes.seek(0)
+        cimg = CoreImage(bytes, ext='png')
+        image1.texture = cimg.texture
         # to avoid anti-aliassing when we zoom in
-        PythoShopApp._image.texture.mag_filter = 'nearest'
-        PythoShopApp._image.texture.min_filter = 'nearest'
+        image1.texture.mag_filter = 'nearest'
+        image1.texture.min_filter = 'nearest'
     except SyntaxError:
         print("Error: ", func.__name__, "generated an exception")
 
@@ -72,26 +109,50 @@ class FileChooserDialog(Widget):
 
     def open(self, file_name):
         print(file_name)
-        if PythoShopApp._image is not None:
-            PythoShopApp._root.zoomer.remove_widget(PythoShopApp._image)
+        if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+            image = PythoShopApp._image1
+            scatter = PythoShopApp._root.image1
+        elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
+            image = PythoShopApp._image2
+            scatter = PythoShopApp._root.image2
+        else:
+            raise Exception("Neither image tab was selected (which shouldn't be possible)")
+
+        if image is not None:
+            PythoShopApp._root.image1.remove_widget(image)
         PhotoShopWidget._file_chooser_popup.dismiss()
 
         img = Image.open(file_name[0])
         img = img.convert('RGB')
-        PythoShopApp._bytes = BytesIO()
-        img.save(PythoShopApp._bytes, format='png')
+        if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+            PythoShopApp._bytes1 = BytesIO()
+            img.save(PythoShopApp._bytes1, format='png')
+            PythoShopApp._bytes1.seek(0)
+            cimg = CoreImage(BytesIO(PythoShopApp._bytes1.read()), ext='png')
+        elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
+            PythoShopApp._bytes2 = BytesIO()
+            img.save(PythoShopApp._bytes2, format='png')
+            PythoShopApp._bytes2.seek(0)
+            cimg = CoreImage(BytesIO(PythoShopApp._bytes2.read()), ext='png')
+        else:
+            raise Exception("Neither image tab was selected (which shouldn't be possible)")
         
-        PythoShopApp._bytes.seek(0)
-        cimg = CoreImage(BytesIO(PythoShopApp._bytes.read()), ext='png')
-        PythoShopApp._image = UixImage(fit_mode="contain") # only use this line in first code instance
-        PythoShopApp._image.texture = cimg.texture
+        image = UixImage(fit_mode="contain") # only use this line in first code instance
+        if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+            PythoShopApp._image1 = image
+        elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
+            PythoShopApp._image2 = image
+        else:
+            raise Exception("Neither image tab was selected (which shouldn't be possible)")
+
+        image.texture = cimg.texture
         # to avoid anti-aliassing when we zoom in
-        PythoShopApp._image.texture.mag_filter = 'nearest'
-        PythoShopApp._image.texture.min_filter = 'nearest'
-        PythoShopApp._image.size_hint = [None, None]
-        PythoShopApp._image.size = PythoShopApp._root.zoomer.size
-        PythoShopApp._image.pos = (0, 0)
-        PythoShopApp._root.zoomer.add_widget(PythoShopApp._image, 100)
+        image.texture.mag_filter = 'nearest'
+        image.texture.min_filter = 'nearest'
+        image.size_hint = [None, None]
+        image.size = scatter.size
+        image.pos = (0, 0)
+        scatter.add_widget(image, 100)
 
 
 class PhotoShopWidget(Widget):
@@ -116,38 +177,49 @@ class PhotoShopWidget(Widget):
         PhotoShopWidget._file_chooser_popup.open()
 
     def save_image(self):
-        if PythoShopApp._image:
-            img = Image.open(PythoShopApp._bytes)
-            img.save(os.path.join(os.path.expanduser('~'), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S")+".png"))
+        if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab and PythoShopApp._image1:
+            img = Image.open(PythoShopApp._bytes1)
+        elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab and PythoShopApp._image2:
+            img = Image.open(PythoShopApp._bytes2)
+        img.save(os.path.join(os.path.expanduser('~'), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S")+".png"))
 
     def on_touch_down(self, touch):
-        if PythoShopApp._image and PythoShopApp._tool_function:
-            if not PythoShopApp._image.parent.collide_point(*touch.pos):
+        if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+            image = PythoShopApp._image1
+            scatter = PythoShopApp._root.image1
+        elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
+            image = PythoShopApp._image2
+            scatter = PythoShopApp._root.image2
+        else:
+            image = None
+            scatter = None
+        if image and PythoShopApp._tool_function:
+            if not image.parent.collide_point(*touch.pos):
                 return super().on_touch_down(touch)
             else:
-                lr_space = (PythoShopApp._image.width - PythoShopApp._image.norm_image_size[0]) / 2  # empty space in Image widget left and right of actual image
-                tb_space = (PythoShopApp._image.height - PythoShopApp._image.norm_image_size[1]) / 2  # empty space in Image widget above and below actual image
+                lr_space = (image.width - image.norm_image_size[0]) / 2  # empty space in Image widget left and right of actual image
+                tb_space = (image.height - image.norm_image_size[1]) / 2  # empty space in Image widget above and below actual image
                 print('lr_space =', lr_space, ', tb_space =', tb_space)
                 print("Touch Cords", touch.x, touch.y)
-                print('Size of image within ImageView widget:', PythoShopApp._image.norm_image_size)
-                print('ImageView widget:, pos:', PythoShopApp._image.pos, ', size:', PythoShopApp._image.size)
-                print('image extents in x:', PythoShopApp._root.zoomer.x + lr_space, PythoShopApp._image.right - lr_space)
-                print('image extents in y:', PythoShopApp._root.zoomer.y + tb_space, PythoShopApp._image.top - tb_space)
-                pixel_x = touch.x - lr_space - PythoShopApp._root.zoomer.x  # x coordinate of touch measured from lower left of actual image
-                pixel_y = touch.y - tb_space - PythoShopApp._root.zoomer.y  # y coordinate of touch measured from lower left of actual image
+                print('Size of image within ImageView widget:', image.norm_image_size)
+                print('ImageView widget:, pos:', image.pos, ', size:', image.size)
+                print('image extents in x:', scatter.x + lr_space, image.right - lr_space)
+                print('image extents in y:', scatter.y + tb_space, image.top - tb_space)
+                pixel_x = touch.x - lr_space - scatter.x  # x coordinate of touch measured from lower left of actual image
+                pixel_y = touch.y - tb_space - scatter.y  # y coordinate of touch measured from lower left of actual image
                 if pixel_x < 0 or pixel_y < 0:
                     print('clicked outside of image\n')
                     return super().on_touch_down(touch)
-                elif pixel_x >= PythoShopApp._image.norm_image_size[0] or \
-                        pixel_y >= PythoShopApp._image.norm_image_size[1]:
+                elif pixel_x >= image.norm_image_size[0] or \
+                        pixel_y >= image.norm_image_size[1]:
                     print('clicked outside of image\n')
                     return super().on_touch_down(touch)
                 else:
                     print('clicked inside image, coords:', pixel_x, pixel_y)
 
                     # scale coordinates to actual pixels of the Image source
-                    actual_x = int(pixel_x * PythoShopApp._image.texture_size[0] / PythoShopApp._image.norm_image_size[0])
-                    actual_y = (PythoShopApp._image.texture_size[1] - 1) - int(pixel_y * PythoShopApp._image.texture_size[1] / PythoShopApp._image.norm_image_size[1])
+                    actual_x = int(pixel_x * image.texture_size[0] / image.norm_image_size[0])
+                    actual_y = (image.texture_size[1] - 1) - int(pixel_y * image.texture_size[1] / image.norm_image_size[1])
                     print('actual pixel coords:', actual_x, actual_y, '\n')
                     # Note: can't call your manip functions "_select_"
                     if PythoShopApp._tool_function.__name__[:8] == "_select_":
@@ -159,21 +231,31 @@ class PhotoShopWidget(Widget):
             return super().on_touch_down(touch)
         
     def on_touch_move(self, touch):
-        if PythoShopApp._image and PythoShopApp._tool_function:
-            if not PythoShopApp._image.parent.collide_point(*touch.pos):
+        if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+            image = PythoShopApp._image1
+            scatter = PythoShopApp._root.image1
+        elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
+            image = PythoShopApp._image2
+            scatter = PythoShopApp._root.image2
+        else:
+            image = None
+            scatter = None
+
+        if image and PythoShopApp._tool_function:
+            if not image.parent.collide_point(*touch.pos):
                 return super().on_touch_move(touch)
             else:
-                lr_space = (PythoShopApp._image.width - PythoShopApp._image.norm_image_size[0]) / 2  # empty space in Image widget left and right of actual image
-                tb_space = (PythoShopApp._image.height - PythoShopApp._image.norm_image_size[1]) / 2  # empty space in Image widget above and below actual image
-                pixel_x = touch.x - lr_space - PythoShopApp._root.zoomer.x  # x coordinate of touch measured from lower left of actual image
-                pixel_y = touch.y - tb_space - PythoShopApp._root.zoomer.y  # y coordinate of touch measured from lower left of actual image
+                lr_space = (image.width - image.norm_image_size[0]) / 2  # empty space in Image widget left and right of actual image
+                tb_space = (image.height - image.norm_image_size[1]) / 2  # empty space in Image widget above and below actual image
+                pixel_x = touch.x - lr_space - scatter.x  # x coordinate of touch measured from lower left of actual image
+                pixel_y = touch.y - tb_space - scatter.y  # y coordinate of touch measured from lower left of actual image
                 if pixel_x < 0 or pixel_y < 0:
                     return super().on_touch_move(touch)
-                elif pixel_x >= PythoShopApp._image.norm_image_size[0] or pixel_y >= PythoShopApp._image.norm_image_size[1]:
+                elif pixel_x >= image.norm_image_size[0] or pixel_y >= image.norm_image_size[1]:
                     return super().on_touch_move(touch)
                 else:
-                    actual_x = int(pixel_x * PythoShopApp._image.texture_size[0] / PythoShopApp._image.norm_image_size[0])
-                    actual_y = (PythoShopApp._image.texture_size[1] - 1) - int(pixel_y * PythoShopApp._image.texture_size[1] / PythoShopApp._image.norm_image_size[1])
+                    actual_x = int(pixel_x * image.texture_size[0] / image.norm_image_size[0])
+                    actual_y = (image.texture_size[1] - 1) - int(pixel_y * image.texture_size[1] / image.norm_image_size[1])
                     if PythoShopApp._tool_function.__name__[:8] == "_select_":
                         PythoShopApp._tool_function(actual_x, actual_y)
                     else:
@@ -184,8 +266,10 @@ class PhotoShopWidget(Widget):
 
 
 class PythoShopApp(App):
-    _bytes = None
-    _image = None
+    _image1 = None
+    _bytes1 = None
+    _image2 = None
+    _bytes2 = None
     _root = None
     _tool_function = None
     _color_picker = None
@@ -254,7 +338,9 @@ class PythoShopApp(App):
             PythoShopApp._root.filter_button.bind(on_release=PythoShopApp._filter_dropdown.open)
             PythoShopApp._root.tool_button.bind(on_release=PythoShopApp._tool_dropdown.open)
             def select_filter(self, btn):
-                if PythoShopApp._image:
+                # currently selected tab actually has an image
+                if (PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab and PythoShopApp._image1) \
+                    or (PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab and PythoShopApp._image2):
                     run_manip_function(btn.func)
             PythoShopApp._filter_dropdown.bind(on_select=select_filter)
 

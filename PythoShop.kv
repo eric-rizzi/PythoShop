@@ -19,7 +19,11 @@
 
 
 <PhotoShopWidget>:
-    zoomer: zoomer
+    images_panel: images_panel
+    primary_tab: primary_tab
+    secondary_tab: secondary_tab
+    image1: image1
+    image2: image2
     filter_button: filter_button
     tool_button: tool_button
     color_button: color_button
@@ -62,34 +66,34 @@
                 text: 'Save'
                 on_release: root.save_image()
 
-
-        BoxLayout:
-            # zindex: 100
-            padding: 0
-            # canvas:
-            #     Color:
-            #         rgb: 0, 1, 0
-            #     Rectangle:
-            #         size: self.size
-            #         pos: self.x, self.y
-            Scatter:
-                id: zoomer
-                height: self.height
-                # size_hint: 1, 0.9
-                scale: 1
-                # valign: 'bottom'
-                # halign: 'left'
-                # padding: 10
-                # margin: 10
-                # zindex: 100
-                do_rotation: False
-                do_translation: False
-                auto_bring_to_front: False
-                # canvas: 
-                #     Color:
-                #         rgb: 1, 0, 0
-                #     Rectangle:
-                #         size: self.size
+        TabbedPanel:
+            id: images_panel
+            do_default_tab: False
+            tab_pos: 'left_mid'
+            TabbedPanelItem:
+                id: primary_tab
+                text: 'primary'
+                BoxLayout:
+                    padding: 0
+                    Scatter:
+                        id: image1
+                        height: self.height
+                        scale: 1
+                        do_rotation: False
+                        do_translation: False
+                        auto_bring_to_front: False
+            TabbedPanelItem:
+                id: secondary_tab
+                text: 'secondary'
+                BoxLayout:
+                    padding: 0
+                    Scatter:
+                        id: image2
+                        height: self.height
+                        scale: 1
+                        do_rotation: False
+                        do_translation: False
+                        auto_bring_to_front: False
 
         BoxLayout:
             padding: 10
