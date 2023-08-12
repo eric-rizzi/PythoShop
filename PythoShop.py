@@ -68,20 +68,20 @@ def run_manip_function(func, **kwargs):
         else:
             img2 = None
         result = func(img1, other_image=img2, color=chosen_color, extra=extra_input, **kwargs)
-        if func.__return_type__ == Image.Image.__class__:
-            if result is None:
-                raise Exception("Function", func.__name__, "should have returned an image but instead returned nothing")
+        if result != None:
             if result.__class__ != Image.Image:
                 raise Exception("Function", func.__name__, "should have returned an image but instead returned something else")
             if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
                 PythoShopApp._bytes1 = BytesIO()
                 result.save(PythoShopApp._bytes1, format='png')
+                bytes = PythoShopApp._bytes1
             elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
                 PythoShopApp._bytes2 = BytesIO()
                 result.save(PythoShopApp._bytes2, format='png')
+                bytes = PythoShopApp._bytes2
             else:
                 raise Exception("No bytes to set")
-        else:
+        else: # No return: assume that the change has been made to the file itself
             bytes = BytesIO()
             if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
                 PythoShopApp._bytes1 = bytes
