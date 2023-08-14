@@ -24,15 +24,20 @@ def _set_extra(value):
 
 
 def _select_coordinate(x, y):
-    _set_extra(str(x) + ", " + str(y))
+    _set_extra(f"{x}, {y}")
 
 
 def _select_color(x, y):
-    if PythoShopApp._root.images_tab.current_tab == PythoShopApp._root.primary_tab:
-        pass
-    img = Image.open(PythoShopApp._bytes)
-    r, g, b = img.getpixel((x, y))
-    _set_extra(str(r) + ", " + str(g) + ", " + str(b))
+    img = None
+    if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+        if PythoShopApp._bytes1:
+            img = Image.open(PythoShopApp._bytes1)
+    else:  # secondary tab
+        if PythoShopApp._bytes2:
+            img = Image.open(PythoShopApp._bytes2)
+    if img:
+        r, g, b = img.getpixel((x, y))
+        _set_extra(f"{r}, {g}, {b}")
 
 
 def run_manip_function(func, **kwargs):

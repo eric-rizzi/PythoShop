@@ -1,7 +1,17 @@
+"""PythoShop Exports
+
+Defines the decorators used to automatically export functions 
+from ImageManip.py into the PythoShop GUI application.
+"""
+
 import functools
 from PIL import Image
 
 def export_filter(func):
+    """Decorator
+    describes a function that will be called on an image 
+    *as a whole* immediately when the user selects it.
+    """
     func.__type__ = "filter"
     func.__return_type__ = None
     @functools.wraps(func)
@@ -10,6 +20,10 @@ def export_filter(func):
     return wrapper
 
 def export_tool(func):
+    """Decorator 
+    describes a function that will selected and then called 
+    once the user clicks on a specific position on the image.
+    """
     func.__type__ = "tool"
     func.__return_type__ = None
     @functools.wraps(func)
