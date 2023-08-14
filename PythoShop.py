@@ -27,7 +27,7 @@ def _select_coordinate(x, y):
     _set_extra(f"{x}, {y}")
 
 
-def _select_color(x, y):
+def _select_color(x, y):  # sourcery skip: merge-else-if-into-elif
     img = None
     if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
         if PythoShopApp._bytes1:
@@ -37,7 +37,8 @@ def _select_color(x, y):
             img = Image.open(PythoShopApp._bytes2)
     if img:
         r, g, b = img.getpixel((x, y))
-        _set_extra(f"{r}, {g}, {b}")
+        PythoShopApp._color_picker.color = (r/255, g/255, b/255, 1)
+
 
 
 def run_manip_function(func, **kwargs):
