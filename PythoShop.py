@@ -19,6 +19,10 @@ from kivy.uix.colorpicker import ColorPicker
 from kivy.core.window import Window
 
 
+class NoImageError(Exception):
+    pass
+
+
 def _set_extra(value):
     PythoShopApp._root.extra_input.text = value
 
@@ -40,9 +44,7 @@ def _select_color(x, y):  # sourcery skip: merge-else-if-into-elif
         PythoShopApp._color_picker.color = (r/255, g/255, b/255, 1)
 
 
-
 def run_manip_function(func, **kwargs):
-    print("Running", func)
     if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
         image1 = PythoShopApp._image1
         bytes1 = PythoShopApp._bytes1
@@ -58,7 +60,7 @@ def run_manip_function(func, **kwargs):
         bytes2 = PythoShopApp._bytes1
         scatter2 = PythoShopApp._root.image1
     else:
-        raise Exception("Neither image tab was selected (which shouldn't be possible)")
+        raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
     try:
         chosen_color = (
             int(PythoShopApp._root.color_button.background_color[0]*255), 
@@ -80,25 +82,25 @@ def run_manip_function(func, **kwargs):
             if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
                 PythoShopApp._bytes1 = BytesIO()
                 result.save(PythoShopApp._bytes1, format='png')
-                bytes = PythoShopApp._bytes1
+                result_bytes = PythoShopApp._bytes1
             elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
                 PythoShopApp._bytes2 = BytesIO()
                 result.save(PythoShopApp._bytes2, format='png')
-                bytes = PythoShopApp._bytes2
+                result_bytes = PythoShopApp._bytes2
             else:
-                raise Exception("No bytes to set")
+                raise NoImageError("No bytes to set")
         else: # No return: assume that the change has been made to the file itself
-            bytes = BytesIO()
+            result_bytes = BytesIO()
             if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
-                PythoShopApp._bytes1 = bytes
+                PythoShopApp._bytes1 = result_bytes
             elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
-                PythoShopApp._bytes2 = bytes
+                PythoShopApp._bytes2 = result_bytes
             else:
-                raise Exception("Neither image tab was selected (which shouldn't be possible)")
-            img1.save(bytes, format='png')
+                raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
+            img1.save(result_bytes, format='png')
         
-        bytes.seek(0)
-        cimg = CoreImage(bytes, ext='png')
+        result_bytes.seek(0)
+        cimg = CoreImage(result_bytes, ext='png')
         image1.texture = cimg.texture
         # to avoid anti-aliassing when we zoom in
         image1.texture.mag_filter = 'nearest'
@@ -122,7 +124,7 @@ class FileChooserDialog(Widget):
             image = PythoShopApp._image2
             scatter = PythoShopApp._root.image2
         else:
-            raise Exception("Neither image tab was selected (which shouldn't be possible)")
+            raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
 
         if image is not None:
             PythoShopApp._root.image1.remove_widget(image)
@@ -141,7 +143,7 @@ class FileChooserDialog(Widget):
             PythoShopApp._bytes2.seek(0)
             cimg = CoreImage(BytesIO(PythoShopApp._bytes2.read()), ext='png')
         else:
-            raise Exception("Neither image tab was selected (which shouldn't be possible)")
+            raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
         
         image = UixImage(fit_mode="contain") # only use this line in first code instance
         if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
@@ -149,7 +151,7 @@ class FileChooserDialog(Widget):
         elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
             PythoShopApp._image2 = image
         else:
-            raise Exception("Neither image tab was selected (which shouldn't be possible)")
+            raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
 
         image.texture = cimg.texture
         # to avoid anti-aliassing when we zoom in
