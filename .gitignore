@@ -3,4 +3,4 @@ __pycache__
 *.png
 *.bmp
 *.jpg
-ImageManip.py
+ImageManip*.py
