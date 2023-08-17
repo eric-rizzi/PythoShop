@@ -41,7 +41,7 @@ def _select_color(x, y):  # sourcery skip: merge-else-if-into-elif
     cimage, cbytes, cscatter = get_current_image()
     if cbytes:
         img = Image.open(cbytes)
-        r, g, b = img.getpixel((x, y))
+        r, g, b = img.getpixel((x, img.height - 1 - y))
         PythoShopApp._color_picker.color = (r/255, g/255, b/255, 1)
 
 
@@ -60,41 +60,35 @@ def run_manip_function(func, **kwargs):
         raise NoImageError("The currently selected tab doesn't have an image loaded into it")
     try:
         chosen_color = (
-            int(PythoShopApp._root.color_button.background_color[0]*255), 
+            int(PythoShopApp._root.color_button.background_color[2]*255), 
             int(PythoShopApp._root.color_button.background_color[1]*255), 
-            int(PythoShopApp._root.color_button.background_color[2]*255)
+            int(PythoShopApp._root.color_button.background_color[0]*255)
         )
         extra_input = PythoShopApp._root.extra_input.text
         bytes1.seek(0)
-        img1 = Image.open(bytes1)
         if bytes2:
             bytes2.seek(0)
-            img2 = Image.open(bytes2)
-        else:
-            img2 = None
-        result = func(img1, other_image=img2, color=chosen_color, extra=extra_input, **kwargs)
-        if result != None: # Something was returned, make sure it was an image
-            if result.__class__ != Image.Image:
+        result = func(bytes1, other_image=bytes2, color=chosen_color, extra=extra_input, **kwargs)
+        if result != None: # Something was returned, make sure it was an image file
+            if result.__class__ != io.BytesIO:
                 raise Exception("Function", func.__name__, "should have returned an image but instead returned something else")
             if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
-                result_bytes = PythoShopApp._bytes1 = BytesIO()
+                result_bytes = PythoShopApp._bytes1 = result
             elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
-                result_bytes = PythoShopApp._bytes2 = BytesIO()
+                result_bytes = PythoShopApp._bytes2 = result
             else:
                 raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
-            result.save(result_bytes, format='png')
         else: # No return: assume that the change has been made to the image itself (img1)
-            result_bytes = BytesIO()
             if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
-                PythoShopApp._bytes1 = result_bytes
+                PythoShopApp._bytes1 = bytes1
             elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
-                PythoShopApp._bytes2 = result_bytes
+                PythoShopApp._bytes2 = bytes1
             else:
                 raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
-            img1.save(result_bytes, format='png')
+            result_bytes = bytes1
         
         result_bytes.seek(0)
-        cimage.texture = CoreImage(result_bytes, ext='png').texture
+        cimage.texture = CoreImage(result_bytes, ext='bmp').texture
         # to avoid anti-aliassing when zoomed
         cimage.texture.mag_filter = 'nearest'
         cimage.texture.min_filter = 'nearest'
@@ -124,17 +118,25 @@ class FileChooserDialog(Widget):
 
         PhotoShopWidget._file_chooser_popup.dismiss()
 
-        img = Image.open(file_name[0])
-        img = img.convert('RGB')
+        if os.path.splitext(file_name[0])[-1].lower() == ".bmp":
+            # Load it directly rather than going through Pillow where we might loose some fidelity (e.g. paddding bytes)
+            current_bytes = BytesIO()
+            current_bytes.write(open(file_name[0], "rb").read())
+        else:
+            current_bytes = BytesIO()
+            img = Image.open(file_name[0])
+            img = img.convert('RGB')
+            img.save(current_bytes, format='bmp')
+            img.close()
         if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
-            current_bytes = PythoShopApp._bytes1 = BytesIO()
+            PythoShopApp._bytes1 = current_bytes
         elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
-            current_bytes = PythoShopApp._bytes2 = BytesIO()
+            PythoShopApp._bytes2 = current_bytes
         else:
             raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
-        img.save(current_bytes, format='png')
+
         current_bytes.seek(0)
-        cimg = CoreImage(BytesIO(current_bytes.read()), ext='png')
+        cimg = CoreImage(BytesIO(current_bytes.read()), ext='bmp')
 
         uix_image = UixImage(fit_mode="contain")
         if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
@@ -175,11 +177,17 @@ class PhotoShopWidget(Widget):
         PhotoShopWidget._file_chooser_popup.open()
 
     def save_image(self):
+        bytes = None
         if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab and PythoShopApp._image1:
-            img = Image.open(PythoShopApp._bytes1)
+            bytes = PythoShopApp._bytes1
         elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab and PythoShopApp._image2:
-            img = Image.open(PythoShopApp._bytes2)
-        img.save(os.path.join(os.path.expanduser('~'), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S")+".png"))
+            bytes = PythoShopApp._bytes2
+        if bytes:
+            bytes.seek(0)
+            new_image_file_name = os.path.join(os.path.expanduser('~'), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S")+".bmp")
+            new_image_file = open(new_image_file_name, "wb")
+            new_image_file.write(bytes.read())
+            new_image_file.close()
 
     def apply_tool(self, touch, callback):
         cimage, cbytes, cscatter = get_current_image()
@@ -199,7 +207,7 @@ class PhotoShopWidget(Widget):
                 else:
                     # scale coordinates to actual pixels of the Image source
                     actual_x = int(pixel_x * cimage.texture_size[0] / cimage.norm_image_size[0])
-                    actual_y = (cimage.texture_size[1] - 1) - int(pixel_y * cimage.texture_size[1] / cimage.norm_image_size[1])
+                    actual_y = int(pixel_y * cimage.texture_size[1] / cimage.norm_image_size[1])
                     # Note: can't call your manip functions "_select_"
                     if PythoShopApp._tool_function.__name__[:8] == "_select_":
                         PythoShopApp._tool_function(actual_x, actual_y)
