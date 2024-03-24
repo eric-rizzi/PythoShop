@@ -15,18 +15,18 @@ def export_filter(func):
     func.__type__ = "filter"
     func.__return_type__ = None
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
+    def wrapper(image, *args, **kwargs):
+        return func(image, *args, **kwargs)
     return wrapper
 
 def export_tool(func):
     """Decorator 
-    describes a function that will selected and then called 
+    describes a function that will get selected and then called 
     once the user clicks on a specific position on the image.
     """
     func.__type__ = "tool"
     func.__return_type__ = None
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
+    def wrapper(image, clicked_coordinate, color, *args, **kwargs):
+        return func(image, clicked_coordinate, color, *args, **kwargs)
     return wrapper

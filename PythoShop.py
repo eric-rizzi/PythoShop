@@ -60,9 +60,9 @@ def run_manip_function(func, **kwargs):
         raise NoImageError("The currently selected tab doesn't have an image loaded into it")
     try:
         chosen_color = (
-            int(PythoShopApp._root.color_button.background_color[2]*255), 
+            int(PythoShopApp._root.color_button.background_color[0]*255), 
             int(PythoShopApp._root.color_button.background_color[1]*255), 
-            int(PythoShopApp._root.color_button.background_color[0]*255)
+            int(PythoShopApp._root.color_button.background_color[2]*255)
         )
         extra_input = PythoShopApp._root.extra_input.text
         bytes1.seek(0)
@@ -70,7 +70,7 @@ def run_manip_function(func, **kwargs):
             bytes2.seek(0)
         result = func(bytes1, other_image=bytes2, color=chosen_color, extra=extra_input, **kwargs)
         if result != None: # Something was returned, make sure it was an image file
-            if result.__class__ != io.BytesIO:
+            if result.__class__ != BytesIO:
                 raise Exception("Function", func.__name__, "should have returned an image but instead returned something else")
             if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
                 result_bytes = PythoShopApp._bytes1 = result
@@ -212,7 +212,7 @@ class PhotoShopWidget(Widget):
                     if PythoShopApp._tool_function.__name__[:8] == "_select_":
                         PythoShopApp._tool_function(actual_x, actual_y)
                     else:
-                        run_manip_function(PythoShopApp._tool_function, clicked_x=actual_x, clicked_y=actual_y)
+                        run_manip_function(PythoShopApp._tool_function, clicked_coordinate=(actual_x, actual_y))
                     return True
         else:
             return super().on_touch_down(touch)
@@ -275,7 +275,7 @@ class PythoShopApp(App):
             select_color_button.bind(on_release=lambda btn: PythoShopApp._tool_dropdown.select(btn))
             PythoShopApp._tool_dropdown.add_widget(select_color_button)
 
-            spec = importlib.util.spec_from_file_location("ImageManip", os.getcwd() + "/imageManip.py")
+            spec = importlib.util.spec_from_file_location("ImageManip", os.getcwd() + "/ImageManip.py")
             manip_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(manip_module)  # try to load it to see if we have a syntax error
             for attribute in dir(manip_module):
