@@ -68,7 +68,10 @@ def run_manip_function(func, **kwargs):
         bytes1.seek(0)
         if bytes2:
             bytes2.seek(0)
-        result = func(bytes1, other_image=bytes2, color=chosen_color, extra=extra_input, **kwargs)
+            kwargs['other_image'] = bytes2
+        kwargs['color'] = chosen_color
+        kwargs['extra'] = extra_input
+        result = func(bytes1, **kwargs)
         if result != None: # Something was returned, make sure it was an image file
             if result.__class__ != BytesIO:
                 raise Exception("Function", func.__name__, "should have returned an image but instead returned something else")

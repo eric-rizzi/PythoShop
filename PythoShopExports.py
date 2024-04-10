@@ -27,6 +27,6 @@ def export_tool(func):
     func.__type__ = "tool"
     func.__return_type__ = None
     @functools.wraps(func)
-    def wrapper(image, clicked_coordinate, color, *args, **kwargs):
-        return func(image, clicked_coordinate, color, *args, **kwargs)
+    def wrapper(image, clicked_coordinate, *args, **kwargs):
+        return func(image, clicked_coordinate, *args, **kwargs)
     return wrapper

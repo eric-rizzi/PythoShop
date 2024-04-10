@@ -5,11 +5,12 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Current File",
-            "type": "debugpy",
+            "name": "PythoShop",
+            "type": "python",
             "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal"
+            "program": "PythoShop.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
         },
         {
             "name": "Install prereqs",
@@ -25,30 +26,10 @@
             "justMyCode": true
         },
         {
-            "name": "PythoShop",
-            "type": "python",
-            "request": "launch",
-            "program": "PythoShop.py",
-            "console": "integratedTerminal",
-            "justMyCode": true
-        },
-        {
             "name": "Tests",
             "type": "python",
             "request": "launch",
             "module": "testRunner",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "cwd": "${workspaceFolder}/tests",
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}"
-            }
-        },
-        {
-            "name": "Gen solution",
-            "type": "python",
-            "request": "launch",
-            "module": "pickleImages",
             "console": "integratedTerminal",
             "justMyCode": true,
             "cwd": "${workspaceFolder}/tests",
