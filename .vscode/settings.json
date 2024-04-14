@@ -1,0 +1,30 @@
+{
+    "python.envFile": "${workspaceFolder}/.vscode/env",
+    "python.analysis.extraPaths": ["${workspaceFolder}/src"],
+
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+
+    "python.analysis.typeCheckingMode": "off",
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit"
+        }
+    },
+    "black-formatter.args": ["--line-length", "160"],
+    "isort.args": [
+        "-l",
+        "160",
+        "--profile",
+        "black"
+    ],
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./tests",
+        "-p",
+        "test*.py"
+    ]
+}

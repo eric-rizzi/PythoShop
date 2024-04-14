@@ -1,22 +1,20 @@
+import importlib.util
+import os
+import time
+from io import BytesIO
+
 from kivy.app import App
 from kivy.core.image import Image as CoreImage
-from kivy.uix.image import Image as UixImage
-from kivy.uix.button import Button
-from kivy.uix.widget import Widget
-from kivy.uix.dropdown import DropDown
-from kivy.uix.filechooser import FileChooserIconView
-from kivy.uix.popup import Popup
-from kivy.graphics import Color
-from PIL import Image, ImageDraw, ImageFont
-from io import BytesIO
-from ImageManip import *
-import os
-from random import random
-import importlib.util
-import inspect
-import time
-from kivy.uix.colorpicker import ColorPicker
 from kivy.core.window import Window
+from kivy.uix.button import Button
+from kivy.uix.colorpicker import ColorPicker
+from kivy.uix.dropdown import DropDown
+from kivy.uix.image import Image as UixImage
+from kivy.uix.popup import Popup
+from kivy.uix.widget import Widget
+from PIL import Image
+
+from ImageManip import *
 
 
 class NoImageError(Exception):
@@ -37,12 +35,13 @@ def get_current_image():
     else:
         return PythoShopApp._image2, PythoShopApp._bytes2, PythoShopApp._root.image2
 
+
 def _select_color(x, y):  # sourcery skip: merge-else-if-into-elif
     cimage, cbytes, cscatter = get_current_image()
     if cbytes:
         img = Image.open(cbytes)
         r, g, b = img.getpixel((x, img.height - 1 - y))
-        PythoShopApp._color_picker.color = (r/255, g/255, b/255, 1)
+        PythoShopApp._color_picker.color = (r / 255, g / 255, b / 255, 1)
 
 
 def run_manip_function(func, **kwargs):
@@ -60,19 +59,19 @@ def run_manip_function(func, **kwargs):
         raise NoImageError("The currently selected tab doesn't have an image loaded into it")
     try:
         chosen_color = (
-            int(PythoShopApp._root.color_button.background_color[0]*255), 
-            int(PythoShopApp._root.color_button.background_color[1]*255), 
-            int(PythoShopApp._root.color_button.background_color[2]*255)
+            int(PythoShopApp._root.color_button.background_color[0] * 255),
+            int(PythoShopApp._root.color_button.background_color[1] * 255),
+            int(PythoShopApp._root.color_button.background_color[2] * 255),
         )
         extra_input = PythoShopApp._root.extra_input.text
         bytes1.seek(0)
         if bytes2:
             bytes2.seek(0)
-            kwargs['other_image'] = bytes2
-        kwargs['color'] = chosen_color
-        kwargs['extra'] = extra_input
+            kwargs["other_image"] = bytes2
+        kwargs["color"] = chosen_color
+        kwargs["extra"] = extra_input
         result = func(bytes1, **kwargs)
-        if result != None: # Something was returned, make sure it was an image file
+        if result != None:  # Something was returned, make sure it was an image file
             if result.__class__ != BytesIO:
                 raise Exception("Function", func.__name__, "should have returned an image but instead returned something else")
             if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
@@ -81,7 +80,7 @@ def run_manip_function(func, **kwargs):
                 result_bytes = PythoShopApp._bytes2 = result
             else:
                 raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
-        else: # No return: assume that the change has been made to the image itself (img1)
+        else:  # No return: assume that the change has been made to the image itself (img1)
             if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
                 PythoShopApp._bytes1 = bytes1
             elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
@@ -89,12 +88,12 @@ def run_manip_function(func, **kwargs):
             else:
                 raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
             result_bytes = bytes1
-        
+
         result_bytes.seek(0)
-        cimage.texture = CoreImage(result_bytes, ext='bmp').texture
+        cimage.texture = CoreImage(result_bytes, ext="bmp").texture
         # to avoid anti-aliassing when zoomed
-        cimage.texture.mag_filter = 'nearest'
-        cimage.texture.min_filter = 'nearest'
+        cimage.texture.mag_filter = "nearest"
+        cimage.texture.min_filter = "nearest"
     except SyntaxError:
         print("Error: ", func.__name__, "generated an exception")
 
@@ -102,8 +101,8 @@ def run_manip_function(func, **kwargs):
 class FileChooserDialog(Widget):
     def __init__(self, **kwargs):
         super().__init__()
-        if 'rootpath' in kwargs:
-            self.file_chooser.rootpath = kwargs['rootpath']
+        if "rootpath" in kwargs:
+            self.file_chooser.rootpath = kwargs["rootpath"]
 
     def open(self, file_name):
         if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
@@ -128,8 +127,8 @@ class FileChooserDialog(Widget):
         else:
             current_bytes = BytesIO()
             img = Image.open(file_name[0])
-            img = img.convert('RGB')
-            img.save(current_bytes, format='bmp')
+            img = img.convert("RGB")
+            img.save(current_bytes, format="bmp")
             img.close()
         if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
             PythoShopApp._bytes1 = current_bytes
@@ -139,7 +138,7 @@ class FileChooserDialog(Widget):
             raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
 
         current_bytes.seek(0)
-        cimg = CoreImage(BytesIO(current_bytes.read()), ext='bmp')
+        cimg = CoreImage(BytesIO(current_bytes.read()), ext="bmp")
 
         uix_image = UixImage(fit_mode="contain")
         if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
@@ -151,8 +150,8 @@ class FileChooserDialog(Widget):
 
         uix_image.texture = cimg.texture
         # to avoid anti-aliassing when we zoom in
-        uix_image.texture.mag_filter = 'nearest'
-        uix_image.texture.min_filter = 'nearest'
+        uix_image.texture.mag_filter = "nearest"
+        uix_image.texture.min_filter = "nearest"
         uix_image.size_hint = [None, None]
         uix_image.size = scatter.size
         uix_image.pos = (0, 0)
@@ -174,9 +173,7 @@ class PhotoShopWidget(Widget):
 
     def load_image(self):
         if not PhotoShopWidget._file_chooser_popup:
-            PhotoShopWidget._file_chooser_popup = Popup(
-                title='Choose an image',
-                content=FileChooserDialog(rootpath=os.path.expanduser('~')))
+            PhotoShopWidget._file_chooser_popup = Popup(title="Choose an image", content=FileChooserDialog(rootpath=os.path.expanduser("~")))
         PhotoShopWidget._file_chooser_popup.open()
 
     def save_image(self):
@@ -187,7 +184,7 @@ class PhotoShopWidget(Widget):
             bytes = PythoShopApp._bytes2
         if bytes:
             bytes.seek(0)
-            new_image_file_name = os.path.join(os.path.expanduser('~'), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S")+".bmp")
+            new_image_file_name = os.path.join(os.path.expanduser("~"), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S") + ".bmp")
             new_image_file = open(new_image_file_name, "wb")
             new_image_file.write(bytes.read())
             new_image_file.close()
@@ -204,8 +201,7 @@ class PhotoShopWidget(Widget):
                 pixel_y = touch.y - tb_space - cscatter.y  # y coordinate of touch measured from lower left of actual image
                 if pixel_x < 0 or pixel_y < 0:
                     return callback(touch)
-                elif pixel_x >= cimage.norm_image_size[0] or \
-                        pixel_y >= cimage.norm_image_size[1]:
+                elif pixel_x >= cimage.norm_image_size[0] or pixel_y >= cimage.norm_image_size[1]:
                     return callback(touch)
                 else:
                     # scale coordinates to actual pixels of the Image source
@@ -226,6 +222,7 @@ class PhotoShopWidget(Widget):
     def on_touch_move(self, touch):
         self.apply_tool(touch, super().on_touch_move)
 
+
 class PythoShopApp(App):
     _image1 = None
     _bytes1 = None
@@ -239,7 +236,7 @@ class PythoShopApp(App):
     def on_color(self, value):
         my_value = value.copy()  # we ignore the alpha chanel
         my_value[3] = 1
-        PythoShopApp._root.color_button.background_normal = ''
+        PythoShopApp._root.color_button.background_normal = ""
         PythoShopApp._root.color_button.background_color = my_value
         if (value[0] + value[1] + value[2]) * value[3] > 1.5:
             PythoShopApp._root.color_button.color = [0, 0, 0, 1]
@@ -250,14 +247,12 @@ class PythoShopApp(App):
         else:
             PythoShopApp._first_color = False
 
-
     def _on_file_drop(self, window, file_path):
         PythoShopApp._root.extra_input.text = file_path
 
-
     def build(self):
         Window.bind(on_dropfile=self._on_file_drop)
-        PythoShopApp._root =  PhotoShopWidget()
+        PythoShopApp._root = PhotoShopWidget()
         # Find the functions that can be run
         try:
             PythoShopApp._filter_dropdown = DropDown()
@@ -269,11 +264,11 @@ class PythoShopApp(App):
             PythoShopApp._color_picker.is_visible = False
 
             # Selection tools come first
-            select_coord_button = Button(text='Select coordinate', size_hint_y=None, height=44)
+            select_coord_button = Button(text="Select coordinate", size_hint_y=None, height=44)
             select_coord_button.func = _select_coordinate
             select_coord_button.bind(on_release=lambda btn: PythoShopApp._tool_dropdown.select(btn))
             PythoShopApp._tool_dropdown.add_widget(select_coord_button)
-            select_color_button = Button(text='Select color', size_hint_y=None, height=44)
+            select_color_button = Button(text="Select color", size_hint_y=None, height=44)
             select_color_button.func = _select_color
             select_color_button.bind(on_release=lambda btn: PythoShopApp._tool_dropdown.select(btn))
             PythoShopApp._tool_dropdown.add_widget(select_color_button)
@@ -283,13 +278,13 @@ class PythoShopApp(App):
             spec.loader.exec_module(manip_module)  # try to load it to see if we have a syntax error
             for attribute in dir(manip_module):
                 thing = getattr(manip_module, attribute)
-                if callable(thing) and hasattr(thing, '__wrapped__') and hasattr(thing, '__type__'):
-                    if getattr(thing, '__type__') == 'filter':
+                if callable(thing) and hasattr(thing, "__wrapped__") and hasattr(thing, "__type__"):
+                    if getattr(thing, "__type__") == "filter":
                         btn = Button(text=attribute, size_hint_y=None, height=44)
                         btn.func = thing
                         btn.bind(on_release=lambda btn: PythoShopApp._filter_dropdown.select(btn))
                         PythoShopApp._filter_dropdown.add_widget(btn)
-                    elif getattr(thing, '__type__') == 'tool':
+                    elif getattr(thing, "__type__") == "tool":
                         btn = Button(text=attribute, size_hint_y=None, height=44)
                         btn.func = thing
                         btn.bind(on_release=lambda btn: PythoShopApp._tool_dropdown.select(btn))
@@ -298,16 +293,20 @@ class PythoShopApp(App):
                         print("Error: unrecognized manipulation")
             PythoShopApp._root.filter_button.bind(on_release=PythoShopApp._filter_dropdown.open)
             PythoShopApp._root.tool_button.bind(on_release=PythoShopApp._tool_dropdown.open)
+
             def select_filter(self, btn):
                 # currently selected tab actually has an image
-                if (PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab and PythoShopApp._image1) \
-                    or (PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab and PythoShopApp._image2):
+                if (PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab and PythoShopApp._image1) or (
+                    PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab and PythoShopApp._image2
+                ):
                     run_manip_function(btn.func)
+
             PythoShopApp._filter_dropdown.bind(on_select=select_filter)
 
             def select_tool(self, btn):
-                setattr(PythoShopApp._root.tool_button, 'text', btn.text)
+                setattr(PythoShopApp._root.tool_button, "text", btn.text)
                 PythoShopApp._tool_function = btn.func
+
             PythoShopApp._tool_dropdown.bind(on_select=select_tool)
         except SyntaxError:
             print("Error: ImageManip.py has a syntax error and can't be executed")
@@ -315,5 +314,5 @@ class PythoShopApp(App):
         return PythoShopApp._root
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     PythoShopApp().run()
