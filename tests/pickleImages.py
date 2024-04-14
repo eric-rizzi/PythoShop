@@ -1,5 +1,5 @@
 import pickle
-import ImageManip
+import ImageManipBMP
 import unittest
 import testFiles
 import random
@@ -44,7 +44,7 @@ if __name__ == '__main__':
                 original_file_name = original_file_name + ".bmp"
                 original_file = open(original_file_name, "rb")
                 original_files.append(original_file)
-            testFunction = getattr(ImageManip, test_name)
+            testFunction = getattr(ImageManipBMP, test_name)
             result = testFunction(*original_files, **test_args)
             if result is not None:
                 solution_file.close()

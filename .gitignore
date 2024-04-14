@@ -4,5 +4,6 @@ __pycache__
 *.bmp
 *.jpg
 *.pickle
+*.zip
 ImageManip*.py
 admin/
