@@ -1,4 +1,26 @@
+import io
+
 from PythoShopExports import export_filter, export_tool
+
+
+def create_bmp(width: int, height: int) -> io.BytesIO:
+    row_size = width * 3
+    row_padding = 0
+    if row_size % 4 != 0:
+        row_padding = 4 - row_size % 4
+        row_size += row_padding
+    bmp = io.BytesIO(b"\x42\x4D" + (138 + row_size * height).to_bytes(4, byteorder="little"))
+    bmp.seek(10)
+    bmp.write((138).to_bytes(4, byteorder="little"))  # starting pixel
+    bmp.write((124).to_bytes(4, byteorder="little"))  # header size (for version 5)
+    bmp.write(width.to_bytes(4, byteorder="little"))
+    bmp.write(height.to_bytes(4, byteorder="little"))
+    bmp.write((1).to_bytes(2, byteorder="little"))  # color planes must be 1
+    bmp.write((24).to_bytes(2, byteorder="little"))  # bits per pixel
+    bmp.write((0).to_bytes(4, byteorder="little"))  # compression (none)
+    bmp.seek(138)
+    bmp.write(bytes(([0, 0, 0]) * width + [0] * row_padding) * height)
+    return bmp
 
 
 def get_fpp(image) -> int:
@@ -119,3 +141,39 @@ def remove_green(image, color, extra, **kwargs) -> None:
         for y in range(height):
             r, g, b = get_pixel_rgb(image, (x, y))
             set_pixel_rgb(image, (x, y), (r, 0, b))
+
+
+@export_filter
+def blend_other(image: io.BytesIO, other_image: io.BytesIO, color: tuple[int, int, int], extra="0.5", **kwargs) -> io.BytesIO:
+    try:
+        percentage1 = float(extra)
+    except ValueError:
+        percentage1 = 0.5
+    if percentage1 < 0 or percentage1 > 1:
+        raise ValueError("The extra parameter must be a percentage (between 0 and 1)")
+
+    percentage2 = 1 - percentage1
+
+    width_1 = get_width(image)
+    width_2 = get_width(other_image)
+    min_width = min(width_1, width_2)
+
+    height_1 = get_height(image)
+    height_2 = get_height(other_image)
+    min_height = min(height_1, height_2)
+
+    breakpoint()
+    result = create_bmp(min_width, min_height)
+
+    for x in range(min_width):  # go through overlapping rows in the images
+        for y in range(min_height):
+            r1, g1, b1 = get_pixel_rgb(image, (x, y))
+            r2, g2, b2 = get_pixel_rgb(other_image, (x, y))
+            set_pixel_rgb(
+                result,
+                (x, y),
+                (round(r1 * percentage1 + r2 * percentage2), round(g1 * percentage1 + g2 * percentage2), round(b1 * percentage1 + b2 * percentage2)),
+            )
+
+    result.seek(0)
+    return result
