@@ -1,6 +1,4 @@
-from PIL import Image, ImageDraw
-
-from PythoShopExports import *
+from PythoShopExports import export_filter, export_tool
 
 
 def get_fpp(image) -> int:
