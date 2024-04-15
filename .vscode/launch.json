@@ -8,7 +8,7 @@
             "name": "PythoShop",
             "type": "python",
             "request": "launch",
-            "program": "PythoShop.py",
+            "program": "pytho_shop.py",
             "console": "integratedTerminal",
             "justMyCode": true
         },

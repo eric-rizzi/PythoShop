@@ -6,6 +6,7 @@ from io import BytesIO
 from kivy.app import App
 from kivy.core.image import Image as CoreImage
 from kivy.core.window import Window
+from kivy.lang import Builder
 from kivy.uix.button import Button
 from kivy.uix.colorpicker import ColorPicker
 from kivy.uix.dropdown import DropDown
@@ -14,7 +15,9 @@ from kivy.uix.popup import Popup
 from kivy.uix.widget import Widget
 from PIL import Image
 
-from image_manip_solution import *
+Builder.load_file("pytho_shop.kv")
+
+from image_manip import *
 
 
 class NoImageError(Exception):
@@ -273,7 +276,7 @@ class PythoShopApp(App):
             select_color_button.bind(on_release=lambda btn: PythoShopApp._tool_dropdown.select(btn))
             PythoShopApp._tool_dropdown.add_widget(select_color_button)
 
-            spec = importlib.util.spec_from_file_location("ImageManip", os.getcwd() + "/ImageManip.py")
+            spec = importlib.util.spec_from_file_location("image_manip", os.getcwd() + "/image_manip.py")
             manip_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(manip_module)  # try to load it to see if we have a syntax error
             for attribute in dir(manip_module):
@@ -291,6 +294,7 @@ class PythoShopApp(App):
                         PythoShopApp._tool_dropdown.add_widget(btn)
                     else:
                         print("Error: unrecognized manipulation")
+
             PythoShopApp._root.filter_button.bind(on_release=PythoShopApp._filter_dropdown.open)
             PythoShopApp._root.tool_button.bind(on_release=PythoShopApp._tool_dropdown.open)
 
@@ -309,7 +313,7 @@ class PythoShopApp(App):
 
             PythoShopApp._tool_dropdown.bind(on_select=select_tool)
         except SyntaxError:
-            print("Error: ImageManip.py has a syntax error and can't be executed")
+            print("Error: image_manip.py has a syntax error and can't be executed")
 
         return PythoShopApp._root
 
