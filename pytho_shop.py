@@ -14,7 +14,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.widget import Widget
 from PIL import Image
 
-from ImageManip import *
+from image_manip_solution import *
 
 
 class NoImageError(Exception):

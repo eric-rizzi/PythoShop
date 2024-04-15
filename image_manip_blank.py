@@ -1,6 +1,6 @@
 import io
 
-from PythoShopExports import export_filter, export_tool
+from pytho_shop_exports import export_filter, export_tool
 
 
 def create_bmp(width: int, height: int) -> io.BytesIO:
@@ -95,85 +95,3 @@ def set_pixel_rgb(image, x_y_tuple: tuple[int, int], r_g_b_tuple: tuple[int, int
     image.write(int.to_bytes(r_g_b_tuple[2]))
     image.write(int.to_bytes(r_g_b_tuple[1]))
     image.write(int.to_bytes(r_g_b_tuple[0]))
-
-
-@export_tool
-def change_pixel(image, clicked_coordinate, **kwargs):
-    set_pixel_rgb(image, clicked_coordinate, kwargs["color"])
-    print(clicked_coordinate)
-
-
-@export_filter
-def draw_hline(image, color, extra, **kwargs) -> None:
-
-    middle_height = get_height(image) // 2
-    width = get_width(image)
-    for x in range(width):
-        set_pixel_rgb(image, (x, middle_height), color)
-
-
-@export_filter
-def draw_vline(image, color, extra, **kwargs) -> None:
-
-    middle_width = get_width(image) // 2
-    height = get_height(image)
-    for y in range(height):
-        set_pixel_rgb(image, (middle_width, y), color)
-
-
-@export_filter
-def remove_red(image, color, extra, **kwargs) -> None:
-    width = get_width(image)
-    height = get_height(image)
-
-    for x in range(width):
-        for y in range(height):
-            r, g, b = get_pixel_rgb(image, (x, y))
-            set_pixel_rgb(image, (x, y), (0, g, b))
-
-
-@export_filter
-def remove_green(image, color, extra, **kwargs) -> None:
-    width = get_width(image)
-    height = get_height(image)
-
-    for x in range(width):
-        for y in range(height):
-            r, g, b = get_pixel_rgb(image, (x, y))
-            set_pixel_rgb(image, (x, y), (r, 0, b))
-
-
-@export_filter
-def blend_other(image: io.BytesIO, other_image: io.BytesIO, color: tuple[int, int, int], extra="0.5", **kwargs) -> io.BytesIO:
-    try:
-        percentage1 = float(extra)
-    except ValueError:
-        percentage1 = 0.5
-    if percentage1 < 0 or percentage1 > 1:
-        raise ValueError("The extra parameter must be a percentage (between 0 and 1)")
-
-    percentage2 = 1 - percentage1
-
-    width_1 = get_width(image)
-    width_2 = get_width(other_image)
-    min_width = min(width_1, width_2)
-
-    height_1 = get_height(image)
-    height_2 = get_height(other_image)
-    min_height = min(height_1, height_2)
-
-    breakpoint()
-    result = create_bmp(min_width, min_height)
-
-    for x in range(min_width):  # go through overlapping rows in the images
-        for y in range(min_height):
-            r1, g1, b1 = get_pixel_rgb(image, (x, y))
-            r2, g2, b2 = get_pixel_rgb(other_image, (x, y))
-            set_pixel_rgb(
-                result,
-                (x, y),
-                (round(r1 * percentage1 + r2 * percentage2), round(g1 * percentage1 + g2 * percentage2), round(b1 * percentage1 + b2 * percentage2)),
-            )
-
-    result.seek(0)
-    return result

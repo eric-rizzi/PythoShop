@@ -1,28 +1,30 @@
-import unittest
-import pickle
-import tempfile
-import inspect
-import testFiles
-import os
 import importlib.util
+import inspect
+import os
+import pickle
+import platform
 import random
 import signal
-import platform
+import tempfile
+import typing
+import unittest
+
+import testFiles
 
 
-class TestTimeout(Exception):
+class TestTimeoutException(Exception):
     pass
 
 
-class test_timeout:
+class TestTimeout:
     def __init__(self, seconds, error_message=None):
         if error_message is None:
-            error_message = 'test timed out after {}s.'.format(seconds)
+            error_message = "test timed out after {}s.".format(seconds)
             self.seconds = seconds
             self.error_message = error_message
 
     def handle_timeout(self, signum, frame):
-        raise TestTimeout(self.error_message)
+        raise TestTimeoutException(self.error_message)
 
     def __enter__(self):
         if not "Windows" in platform.system():
@@ -34,14 +36,14 @@ class test_timeout:
             signal.alarm(0)
 
 
-class TestBase(object):
-    original_images = {}
-    solution_images = {}
+class TestBase:
+    original_images: set[bytes] = {}
+    solution_images: set[bytes] = {}
     test_parameters = {
         "color": (238, 0, 119),
     }
-    manip_func_name = None
-    manip_func = None
+    manip_func_name: typing.Optional[str] = None
+    manip_func: typing.Optional[str] = None
     test_weight = 0
     image_sets = None
     manip_module = None
@@ -79,14 +81,21 @@ class TestBase(object):
         except SyntaxError:
             raise unittest.SkipTest(cls.__module__ + ": ImageManip.py has a syntax error and can't be tested")
         if len(inspect.getfullargspec(cls.manip_func).args) < len(cls.test_parameters) + cls.num_image_parameters:
-            raise unittest.SkipTest(cls.__module__ + ": function " + cls.manip_func_name + "() does not take " + str(len(cls.test_parameters) + cls.num_image_parameters) + " parameters.")
+            raise unittest.SkipTest(
+                cls.__module__
+                + ": function "
+                + cls.manip_func_name
+                + "() does not take "
+                + str(len(cls.test_parameters) + cls.num_image_parameters)
+                + " parameters."
+            )
         pickled_solutions_file_name = cls.__module__ + ".pickle"
         pickled_solutions = open(pickled_solutions_file_name, "rb")
         cls.solution_images = pickle.load(pickled_solutions)
         pickled_solutions.close()
 
     def test_images(self):
-        with test_timeout(10):
+        with TestTimeout(10):
             for image_set in self.image_sets:
                 image = image_set[0]
                 with self.subTest(i=image_set):
@@ -110,14 +119,32 @@ class TestBase(object):
                             row_size += row_padding
                         image_file.seek(0)
                         header = image_file.read(first_pixel_index)
-                        self.assertTrue(header == self.solution_images[test_file_name][:first_pixel_index], "The header information is incorrect.\n  Should be: " + self.solution_images[test_file_name][:first_pixel_index].hex() + "\n   Actually: " + header.hex())
+                        self.assertTrue(
+                            header == self.solution_images[test_file_name][:first_pixel_index],
+                            "The header information is incorrect.\n  Should be: "
+                            + self.solution_images[test_file_name][:first_pixel_index].hex()
+                            + "\n   Actually: "
+                            + header.hex(),
+                        )
                         for row in range(height):
                             row_index = first_pixel_index + row_size * row
                             for pixel in range(width):
                                 pixel_index = row_index + pixel * 3
-                                correct_b, correct_g, correct_r = self.solution_images[test_file_name][pixel_index:pixel_index + 3]
+                                correct_b, correct_g, correct_r = self.solution_images[test_file_name][pixel_index : pixel_index + 3]
                                 actual_b, actual_g, actual_r = image_file.read(3)
                                 if actual_b != correct_b or actual_g != correct_g or actual_r != correct_r:
-                                    original_b, original_g, original_r = self.original_images[orig_file_name][pixel_index:pixel_index + 3]
-                                    self.assertTrue(False, "Pixel at (" + str(pixel) + ", " + str(row) + ") is incorrect. \nOriginal was " + str([original_b, original_g, original_r]) + "\nIt should be " + str([correct_b, correct_g, correct_r]) + "\nBut actually " + str([actual_b, actual_g, actual_r]))
+                                    original_b, original_g, original_r = self.original_images[orig_file_name][pixel_index : pixel_index + 3]
+                                    self.assertTrue(
+                                        False,
+                                        "Pixel at ("
+                                        + str(pixel)
+                                        + ", "
+                                        + str(row)
+                                        + ") is incorrect. \nOriginal was "
+                                        + str([original_b, original_g, original_r])
+                                        + "\nIt should be "
+                                        + str([correct_b, correct_g, correct_r])
+                                        + "\nBut actually "
+                                        + str([actual_b, actual_g, actual_r]),
+                                    )
                             image_file.read(row_padding)

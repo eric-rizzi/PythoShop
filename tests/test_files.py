@@ -1,4 +1,4 @@
-file_names = [
+FILE_NAMES = [
     "even",
     "square",
     "wider",
