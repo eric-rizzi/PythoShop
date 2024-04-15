@@ -1,10 +1,11 @@
-import testBase
-import tempfile
+import io
+import platform
 import random
 import signal
-import platform
-import testFiles
-import io
+import tempfile
+
+import tests.test_base as test_base
+import tests.test_files as test_files
 
 
 class TestTimeout(Exception):
@@ -14,7 +15,7 @@ class TestTimeout(Exception):
 class test_timeout:
     def __init__(self, seconds, error_message=None):
         if error_message is None:
-            error_message = 'test timed out after {}s.'.format(seconds)
+            error_message = "test timed out after {}s.".format(seconds)
             self.seconds = seconds
             self.error_message = error_message
 
@@ -31,11 +32,12 @@ class test_timeout:
             signal.alarm(0)
 
 
-class TestBase3(testBase.TestBase):
+class TestBase3(test_base.TestBase):
     """
     The functions that this tests take one image and makes a new
     image which gets returned from the function
     """
+
     num_image_parameters = 1
 
     def __init__(self, test):
@@ -45,7 +47,7 @@ class TestBase3(testBase.TestBase):
     def test_images(self):
         with test_timeout(10):
             if self.image_sets is None:
-                self.image_sets = list([file_name] for file_name in testFiles.file_names)
+                self.image_sets = list([file_name] for file_name in test_files.file_names)
             for image_set in self.image_sets:
                 image = image_set[0]
                 with self.subTest(i=image):
@@ -71,14 +73,32 @@ class TestBase3(testBase.TestBase):
                         self.assertTrue(type(result) == io.BytesIO)
                         result.seek(0)
                         header = result.read(first_pixel_index)
-                        self.assertTrue(header == self.solution_images[test_file_name][:first_pixel_index], "The header information is incorrect.\n  Should be: " + self.solution_images[test_file_name][:first_pixel_index].hex() + "\n   Actually: " + header.hex())
+                        self.assertTrue(
+                            header == self.solution_images[test_file_name][:first_pixel_index],
+                            "The header information is incorrect.\n  Should be: "
+                            + self.solution_images[test_file_name][:first_pixel_index].hex()
+                            + "\n   Actually: "
+                            + header.hex(),
+                        )
                         for row in range(height):
                             row_index = first_pixel_index + row_size * row
                             for pixel in range(width):
                                 pixel_index = row_index + pixel * 3
-                                correct_b, correct_g, correct_r = self.solution_images[test_file_name][pixel_index:pixel_index + 3]
+                                correct_b, correct_g, correct_r = self.solution_images[test_file_name][pixel_index : pixel_index + 3]
                                 actual_b, actual_g, actual_r = result.read(3)
                                 if actual_b != correct_b or actual_g != correct_g or actual_r != correct_r:
-                                    original1_b, original1_g, original1_r = self.original_images[image1_file_name][pixel_index:pixel_index + 3]
-                                    self.assertTrue(False, "Pixel at (" + str(pixel) + ", " + str(row) + ") is incorrect. \nOriginal was " + str([original1_b, original1_g, original1_r]) +  "\nIt should be " + str([correct_b, correct_g, correct_r]) + "\nBut actually " + str([actual_b, actual_g, actual_r]))
+                                    original1_b, original1_g, original1_r = self.original_images[image1_file_name][pixel_index : pixel_index + 3]
+                                    self.assertTrue(
+                                        False,
+                                        "Pixel at ("
+                                        + str(pixel)
+                                        + ", "
+                                        + str(row)
+                                        + ") is incorrect. \nOriginal was "
+                                        + str([original1_b, original1_g, original1_r])
+                                        + "\nIt should be "
+                                        + str([correct_b, correct_g, correct_r])
+                                        + "\nBut actually "
+                                        + str([actual_b, actual_g, actual_r]),
+                                    )
                             result.read(row_padding)

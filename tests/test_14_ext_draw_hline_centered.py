@@ -1,8 +1,8 @@
 import unittest
-import testBase
+import tests.test_base as test_base
 
 
-class Extension(testBase.TestBase, unittest.TestCase):
+class Extension(test_base.TestBase, unittest.TestCase):
     manip_func_name = "draw_centered_hline"
     test_weight = 5
     # Only use images that have an absolute center

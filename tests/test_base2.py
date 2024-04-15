@@ -1,4 +1,4 @@
-import testBase
+import tests.test_base as test_base
 import tempfile
 import random
 import signal
@@ -30,7 +30,7 @@ class test_timeout:
             signal.alarm(0)
 
 
-class TestBase2(testBase.TestBase):
+class TestBase2(test_base.TestBase):
     """
     The functions that this tests take two images and makes a new
     image which gets returned from the function

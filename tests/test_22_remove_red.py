@@ -1,7 +1,7 @@
 import unittest
-import testBase
+import tests.test_base as test_base
 
 
-class Test(testBase.TestBase, unittest.TestCase):
+class Test(test_base.TestBase, unittest.TestCase):
     manip_func_name = "remove_red"
     test_weight = 11

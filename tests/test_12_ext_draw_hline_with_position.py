@@ -1,8 +1,9 @@
 import unittest
-import testTool
+
+import tests.test_tool as test_tool
 
 
-class Extension(testTool.Test, unittest.TestCase):
+class Extension(test_tool.Test, unittest.TestCase):
     manip_func_name = "draw_hline"
     test_weight = 10
 

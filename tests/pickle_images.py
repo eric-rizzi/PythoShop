@@ -4,7 +4,7 @@ import pickle
 import random
 import unittest
 
-import testFiles
+import tests.test_files as test_files
 
 # import image_manip_solution
 
@@ -16,7 +16,7 @@ if __name__ == "__main__":
     # Pickle up the original images as inputs for tests
     original_images: dict[str, bytes] = {}
 
-    for file_name in testFiles.FILE_NAMES:
+    for file_name in test_files.FILE_NAMES:
         file_name = file_name + ".bmp"
         file_path = os.path.join(IMAGES_FOLDER_PATH, file_name)
 
@@ -43,7 +43,7 @@ if __name__ == "__main__":
         solution_images: dict[str, bytes] = {}
         pickle_file_name = test._tests[0]._tests[0].__module__ + ".pickle"
         if test_image_sets is None:
-            test_image_sets = list([file_name] for file_name in testFiles.FILE_NAMES)
+            test_image_sets = list([file_name] for file_name in test_files.FILE_NAMES)
 
         for original_file_names in test_image_sets:
             random.seed(0)  # make it predictably random

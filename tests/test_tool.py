@@ -1,7 +1,7 @@
-import testBase
+import tests.test_base as test_base
 
 
-class Test(testBase.TestBase):
+class Test(test_base.TestBase):
     def __init__(self, test):
         super().__init__(test)
         self.__class__.test_parameters = self.__class__.test_parameters.copy()

@@ -1,8 +1,9 @@
 import unittest
-import testBase3
+
+import tests.test_base3 as test_base3
 
 
-class Extension(testBase3.TestBase3, unittest.TestCase):
+class Extension(test_base3.TestBase3, unittest.TestCase):
     manip_func_name = "resize"
     test_weight = 5
 
