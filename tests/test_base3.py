@@ -47,7 +47,7 @@ class TestBase3(test_base.TestBase):
     def test_images(self):
         with test_timeout(10):
             if self.image_sets is None:
-                self.image_sets = list([file_name] for file_name in test_files.file_names)
+                self.image_sets = list([file_name] for file_name in test_files.FILE_NAMES)
             for image_set in self.image_sets:
                 image = image_set[0]
                 with self.subTest(i=image):

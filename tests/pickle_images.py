@@ -4,9 +4,8 @@ import pickle
 import random
 import unittest
 
+import image_manip
 import tests.test_files as test_files
-
-# import image_manip_solution
 
 IMAGES_FOLDER_PATH = "tests/images"
 PICKLE_FILE_NAME = "test_originals.pickle"
@@ -57,7 +56,7 @@ if __name__ == "__main__":
                 original_file_name = original_file_name + ".bmp"
                 original_file = open(original_file_name, "rb")
                 original_files.append(original_file)
-            testFunction = getattr(image_manip_solution, test_name)
+            testFunction = getattr(image_manip, test_name)
             result = testFunction(*original_files, **test_args)
             if result is not None:
                 solution_file.close()

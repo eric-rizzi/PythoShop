@@ -53,7 +53,7 @@ class TestBase:
         super().__init__(test)
         self.__class__.test_parameters = self.__class__.test_parameters.copy()
         if self.image_sets is None:
-            self.image_sets = list([file_name] for file_name in test_files.file_names)
+            self.image_sets = list([file_name] for file_name in test_files.FILE_NAMES)
 
     @classmethod
     def get_parameter_str(cls):
