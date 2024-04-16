@@ -37,15 +37,15 @@ class TestTimeout:
 
 
 class TestBase:
-    original_images: set[bytes] = {}
-    solution_images: set[bytes] = {}
+    original_images: dict[str, bytes] = {}
+    solution_images: dict[str, bytes] = {}
     test_parameters = {
         "color": (238, 0, 119),
     }
     manip_func_name: typing.Optional[str] = None
     manip_func: typing.Optional[str] = None
     test_weight = 0
-    image_sets = None
+    image_sets: typing.Optional[list[list[str]]] = None
     manip_module = None
     num_image_parameters = 1
 
@@ -64,14 +64,14 @@ class TestBase:
 
     @classmethod
     def setUpClass(cls):
-        pickled_originals = open("testOriginals.pickle", "rb")
+        pickled_originals = open(config.TEST_ORIGINALS_PICKLE_FILE_NAME, "rb")
         cls.original_images = pickle.load(pickled_originals)
         pickled_originals.close()
         try:
             if "IMAGE_MANIP" in os.environ:
-                spec = importlib.util.spec_from_file_location("ImageManip", os.environ["IMAGE_MANIP"] + "/ImageManip.py")
+                spec = importlib.util.spec_from_file_location("image_manip.py", os.environ["IMAGE_MANIP"] + "/image_manip.py")
             else:
-                spec = importlib.util.spec_from_file_location("ImageManip", os.getcwd() + "/../ImageManip.py")
+                spec = importlib.util.spec_from_file_location("image_manip.py", os.getcwd() + "/../image_manip.py")
             cls.manip_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(cls.manip_module)
             if cls.manip_func_name in dir(cls.manip_module):
@@ -79,7 +79,13 @@ class TestBase:
             else:
                 raise unittest.SkipTest(cls.__module__ + ": function " + cls.manip_func_name + "() is not available to test")
         except SyntaxError:
-            raise unittest.SkipTest(cls.__module__ + ": ImageManip.py has a syntax error and can't be tested")
+            raise unittest.SkipTest(cls.__module__ + ": image_manip.py has a syntax error and can't be tested")
+
+        print("----------", cls.manip_func_name)
+        print("Inspect args", inspect.getfullargspec(cls.manip_func))
+        print("Class test params", len(cls.test_parameters))
+        print("Class image params", cls.num_image_parameters)
+
         if len(inspect.getfullargspec(cls.manip_func).args) < len(cls.test_parameters) + cls.num_image_parameters:
             raise unittest.SkipTest(
                 cls.__module__
@@ -89,6 +95,7 @@ class TestBase:
                 + str(len(cls.test_parameters) + cls.num_image_parameters)
                 + " parameters."
             )
+
         pickled_solutions_file_name = cls.__module__ + ".pickle"
         pickled_solutions = open(pickled_solutions_file_name, "rb")
         cls.solution_images = pickle.load(pickled_solutions)

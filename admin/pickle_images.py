@@ -8,6 +8,7 @@ import unittest
 
 import image_manip
 import tests.config as config
+from tests.test_base import TestBase
 
 
 def prep_expected_outputs_folder() -> None:
@@ -103,10 +104,14 @@ if __name__ == "__main__":
         if test.countTestCases() == 0:
             continue
 
-        test_name = test._tests[0]._tests[0].manip_func_name
-        test_args = test._tests[0]._tests[0].test_parameters
-        test_image_sets = test._tests[0]._tests[0].image_sets
-        test_module_name = test._tests[0]._tests[0].__module__
+        test_base = test._tests[0]._tests[0]
+        assert isinstance(test_base, TestBase)
+
+        test_name = test_base.manip_func_name
+        assert test_name
+        test_args = test_base.test_parameters
+        test_image_sets = test_base.image_sets
+        test_module_name = test_base.__module__
 
         args_name = ""
         for param, value in test_args.items():
