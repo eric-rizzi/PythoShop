@@ -8,7 +8,7 @@
             "name": "PythoShop",
             "type": "python",
             "request": "launch",
-            "program": "pytho_shop.py",
+            "program": "pythoshop.py",
             "console": "integratedTerminal",
             "justMyCode": true
         },
@@ -29,10 +29,9 @@
             "name": "Tests",
             "type": "python",
             "request": "launch",
-            "module": "test_runner",
+            "program": "tests/test_runner",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "cwd": "${workspaceFolder}/tests",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
             }

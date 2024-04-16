@@ -22,9 +22,9 @@ Distribute to students a zipped workspace (on Schoology) that contains:
     - `pythoshop.code-workspace`
     - `.vscode` folder
 - PythoShop application files
-    - `pytho_shop.py`
-    - `pytho_shop.kv`
-    - `pytho_shop_exports.py`
+    - `pythoshop.py`
+    - `pythoshop.kv`
+    - `pythoshop_exports.py`
 - Base file that students will be working on
     - `image_manip.py`
 - Image files

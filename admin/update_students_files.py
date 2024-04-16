@@ -8,9 +8,9 @@ import students
 
 PYTHOSHOP_FILE_PATHS_TO_COPY = [
     "__init__.py",
-    "pytho_shop.kv",
-    "pytho_shop.py",
-    "pytho_shop_exports.py",
+    "pythoshop.kv",
+    "pythoshop.py",
+    "pythoshop_exports.py",
     "pythoshop.code-workspace",
 ]
 VSCODE_FILE_PATHS_TO_COPY = [

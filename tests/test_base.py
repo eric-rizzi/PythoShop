@@ -80,15 +80,20 @@ class TestBase:
         except SyntaxError:
             raise unittest.SkipTest(cls.__module__ + ": image_manip.py has a syntax error and can't be tested")
 
-        if len(inspect.getfullargspec(cls.manip_func).args) < len(cls.test_parameters) + cls.num_image_parameters:
-            raise unittest.SkipTest(
-                cls.__module__
-                + ": function "
-                + cls.manip_func_name
-                + "() does not take "
-                + str(len(cls.test_parameters) + cls.num_image_parameters)
-                + " parameters."
-            )
+        print("----------", cls.manip_func_name)
+        print("Inspect args", inspect.getfullargspec(cls.manip_func))
+        print("Class test params", len(cls.test_parameters))
+        print("Class image params", cls.num_image_parameters)
+
+        # if len(inspect.getfullargspec(cls.manip_func).args) < len(cls.test_parameters) + cls.num_image_parameters:
+        #     raise unittest.SkipTest(
+        #         cls.__module__
+        #         + ": function "
+        #         + cls.manip_func_name
+        #         + "() does not take "
+        #         + str(len(cls.test_parameters) + cls.num_image_parameters)
+        #         + " parameters."
+        #     )
 
         pickled_solutions_file_name = cls.__module__ + ".pickle"
         pickled_solutions_file_path = os.path.join(config.EXPECTED_OUTPUT_IMAGE_FOLDER, pickled_solutions_file_name)

@@ -8,7 +8,7 @@
             "name": "PythoShop",
             "type": "python",
             "request": "launch",
-            "program": "pytho_shop.py",
+            "program": "pythoshop.py",
             "console": "integratedTerminal",
             "justMyCode": true
         },
@@ -33,7 +33,7 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "env": {
-                "PYTHONPATH": "${workspaceFolder}",
+                "PYTHONPATH": "${workspaceFolder}"
             }
         }
     ]

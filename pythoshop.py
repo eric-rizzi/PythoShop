@@ -15,7 +15,7 @@ from kivy.uix.popup import Popup
 from kivy.uix.widget import Widget
 from PIL import Image
 
-Builder.load_file("pytho_shop.kv")
+Builder.load_file("pythoshop.kv")
 
 from image_manip import *
 

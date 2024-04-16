@@ -1,6 +1,6 @@
 import io
 
-from pytho_shop_exports import export_filter, export_tool
+from pythoshop_exports import export_filter, export_tool
 
 
 def create_bmp(width: int, height: int) -> io.BytesIO:
