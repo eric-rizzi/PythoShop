@@ -18,6 +18,7 @@ over time.
 ### First week
 
 Distribute to students a zipped workspace (on Schoology) that contains:
+
 - vscode workspace files
     - `pythoshop.code-workspace`
     - `.vscode` folder
@@ -42,9 +43,19 @@ Distribute to students a zipped workspace (on Schoology) that contains:
 From there, students will have enough material to work on (when paired with the
 Schoology assignments) for the whole week.
 
+> This is done by setting the `ASSIGNMENT_NUMBER` variable in the
+the `admin/update_student_files.py` file to `1` (aka the first week).
+
 ### Later weeks
 
 As weeks progress, navigate to the `admin/update_student_files.py` file and
 alter the `ASSIGNMENT_NUMBER` variable. This variable represents which week
 the students are in. For example, setting it to `3` will copy all the files
 required for the first three assignments into the student's GoogleDrive folder.
+
+### Further Alterations
+
+At some point, you will want to introduce the "grades" to the students. Doing
+this too soon makes some of them become a bit... nervous. Therefore, it's
+worth commenting out the "Grades Summary" portion of `tests/test_runner.py
+for a while.
