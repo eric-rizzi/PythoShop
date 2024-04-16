@@ -9,7 +9,7 @@ import tempfile
 import typing
 import unittest
 
-import tests.test_files as test_files
+import tests.config as config
 
 
 class TestTimeoutException(Exception):
@@ -53,7 +53,7 @@ class TestBase:
         super().__init__(test)
         self.__class__.test_parameters = self.__class__.test_parameters.copy()
         if self.image_sets is None:
-            self.image_sets = list([file_name] for file_name in test_files.FILE_NAMES)
+            self.image_sets = list([file_name] for file_name in config.FILE_NAMES)
 
     @classmethod
     def get_parameter_str(cls):

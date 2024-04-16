@@ -4,8 +4,8 @@ import random
 import signal
 import tempfile
 
+import tests.config as config
 import tests.test_base as test_base
-import tests.test_files as test_files
 
 
 class TestTimeoutException(Exception):
@@ -47,7 +47,7 @@ class TestBase3(test_base.TestBase):
     def test_images(self):
         with TestTimeout(10):
             if self.image_sets is None:
-                self.image_sets = list([file_name] for file_name in test_files.FILE_NAMES)
+                self.image_sets = list([file_name] for file_name in config.FILE_NAMES)
             for image_set in self.image_sets:
                 image = image_set[0]
                 with self.subTest(i=image):

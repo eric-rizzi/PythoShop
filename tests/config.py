@@ -1,3 +1,7 @@
+IMAGES_FOLDER_PATH = "images"
+EXPECTED_OUTPUT_IMAGE_FOLDER = "images/expected_outputs"
+TEST_ORIGINALS_PICKLE_FILE_NAME = "images/test_originals.pickle"
+
 FILE_NAMES = [
     "even",
     "square",

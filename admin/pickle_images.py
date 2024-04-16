@@ -7,11 +7,7 @@ import typing
 import unittest
 
 import image_manip
-import tests.test_files as test_files
-
-IMAGES_FOLDER_PATH = "images"
-EXPECTED_OUTPUT_IMAGE_FOLDER = "images/expected_outputs"
-PICKLE_FILE_NAME = "images/test_originals.pickle"
+import tests.config as config
 
 
 def prep_expected_outputs_folder() -> None:
@@ -19,10 +15,10 @@ def prep_expected_outputs_folder() -> None:
     Cleans/creates the `expected_outputs` folder which is then filled with
     pickled and "expected" images for the tests.
     """
-    if os.path.exists(EXPECTED_OUTPUT_IMAGE_FOLDER):
-        shutil.rmtree(EXPECTED_OUTPUT_IMAGE_FOLDER)
+    if os.path.exists(config.EXPECTED_OUTPUT_IMAGE_FOLDER):
+        shutil.rmtree(config.EXPECTED_OUTPUT_IMAGE_FOLDER)
 
-    os.mkdir(EXPECTED_OUTPUT_IMAGE_FOLDER)
+    os.mkdir(config.EXPECTED_OUTPUT_IMAGE_FOLDER)
 
 
 def create_artifacts_for_tests(
@@ -37,14 +33,14 @@ def create_artifacts_for_tests(
     print(f"Starting pickling of images for test {test_name}")
     solution_images: dict[str, bytes] = {}
     pickle_file_name = test_module_name + ".pickle"
-    pickle_file_path = os.path.join(EXPECTED_OUTPUT_IMAGE_FOLDER, pickle_file_name)
+    pickle_file_path = os.path.join(config.EXPECTED_OUTPUT_IMAGE_FOLDER, pickle_file_name)
 
     for original_file_names in test_image_sets:
         random.seed(0)  # make it predictably random
         original_files: list[typing.BinaryIO] = []
 
         solution_file_name = test_name + args_name + "-" + "-".join(original_file_names) + ".bmp"
-        solution_file_path = os.path.join(EXPECTED_OUTPUT_IMAGE_FOLDER, solution_file_name)
+        solution_file_path = os.path.join(config.EXPECTED_OUTPUT_IMAGE_FOLDER, solution_file_name)
 
         # Something about:
         # 1. Write origin contents to test file
@@ -84,17 +80,17 @@ if __name__ == "__main__":
     original_images: dict[str, bytes] = {}
 
     print("Starting pickling of original images.")
-    for file_name in test_files.FILE_NAMES:
+    for file_name in config.FILE_NAMES:
         file_name = file_name + ".bmp"
-        file_path = os.path.join(IMAGES_FOLDER_PATH, file_name)
+        file_path = os.path.join(config.IMAGES_FOLDER_PATH, file_name)
 
         with open(file_path, "rb") as fp:
             original_images[file_name] = fp.read()
             print(f"Pickling: {file_name}")
 
-    with open(PICKLE_FILE_NAME, "wb") as pickle_fp:
+    with open(config.TEST_ORIGINALS_PICKLE_FILE_NAME, "wb") as pickle_fp:
         pickle.dump(original_images, pickle_fp)
-    print(f"Outputting pickled images into {PICKLE_FILE_NAME}")
+    print(f"Outputting pickled images into {config.TEST_ORIGINALS_PICKLE_FILE_NAME}")
 
     # Pickle the expected output for each test/transformation
     print('Starting creating and pickling of "expected output" images')
@@ -102,6 +98,7 @@ if __name__ == "__main__":
 
     testSuite = unittest.defaultTestLoader.discover(".")
     for test in testSuite:
+        print(f"Starting pickling of images for {test}")
 
         if test.countTestCases() == 0:
             continue
@@ -117,7 +114,7 @@ if __name__ == "__main__":
 
         if test_image_sets is None:
             # Unless otherwise specified, use all images
-            test_image_sets = list([file_name] for file_name in test_files.FILE_NAMES)
+            test_image_sets = list([file_name] for file_name in config.FILE_NAMES)
 
         create_artifacts_for_tests(
             test_image_sets,
