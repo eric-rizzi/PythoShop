@@ -11,6 +11,7 @@ PYTHOSHOP_FILE_PATHS_TO_COPY = [
     "pytho_shop.kv",
     "pytho_shop.py",
     "pytho_shop_exports.py",
+    "pythoshop.code-workspace",
 ]
 VSCODE_FILE_PATHS_TO_COPY = [
     ".vscode-students/launch.json",
@@ -38,27 +39,26 @@ def copy_readonly_files(files: list[str], destination_folder: str) -> None:
 
 def get_base_test_files() -> list[str]:
     base_test_files = []
-    base_test_files += glob.glob("/Users/danwheadon/Projects/PythoShop/tests/test_base*")
-    base_test_files += glob.glob("/Users/danwheadon/Projects/PythoShop/tests/test_file*")
-    base_test_files += glob.glob("/Users/danwheadon/Projects/PythoShop/tests/test_orig*")
-    base_test_files += glob.glob("/Users/danwheadon/Projects/PythoShop/tests/test_run*")
-    base_test_files += glob.glob("/Users/danwheadon/Projects/PythoShop/tests/images/*")
-    base_test_files += glob.glob("/Users/danwheadon/Projects/PythoShop/tests/test_0*")
+    base_test_files += glob.glob("tests/config.py")
+    base_test_files += glob.glob("tests/test_base*")
+    base_test_files += glob.glob("tests/test_run*")
+    base_test_files += glob.glob("tests/test_tool*")
+    base_test_files += glob.glob("tests/config.py")
+    base_test_files += glob.glob("images/change*")
+    base_test_files += glob.glob("tests/test_0*")
 
     return base_test_files
 
 
 TEST_FILES: dict[int, list[str]] = {}
 TEST_FILES[0] = get_base_test_files()
-TEST_FILES[1] = glob.glob("/Users/danwheadon/Projects/PythoShop/tests/test_1*")
-TEST_FILES[2] = glob.glob("/Users/danwheadon/Projects/PythoShop/tests/test_2*")
-TEST_FILES[3] = glob.glob("/Users/danwheadon/Projects/PythoShop/tests/test_3*")
-TEST_FILES[4] = glob.glob("/Users/danwheadon/Projects/PythoShop/tests/test_4*")
-TEST_FILES[5] = glob.glob("/Users/danwheadon/Projects/PythoShop/tests/test_5*")
-TEST_FILES[6] = glob.glob("/Users/danwheadon/Projects/PythoShop/tests/test_6*")
+TEST_FILES[1] = glob.glob("tests/test_1*")
+TEST_FILES[2] = glob.glob("tests/test_2*")
+TEST_FILES[3] = glob.glob("tests/test_3*")
+TEST_FILES[4] = glob.glob("tests/test_4*")
+TEST_FILES[5] = glob.glob("tests/test_5*")
+TEST_FILES[6] = glob.glob("tests/test_6*")
 
-# for file in testFiles.file_names:
-#     files += ["./"+file+".bmp"]
 
 if __name__ == "__main__":
 
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     for i in range(0, COPY_LEVEL + 1):
         test_files_to_copy += TEST_FILES[i]
 
-    for student_folder in students.student_folders:
+    for student_folder in students.STUDENT_FOLDERS:
         student_folder = os.path.join(student_folder, "PythoShop")
         copy_readonly_files(PYTHOSHOP_FILE_PATHS_TO_COPY, student_folder)
 
