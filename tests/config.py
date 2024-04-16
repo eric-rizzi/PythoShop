@@ -3,24 +3,24 @@ EXPECTED_OUTPUT_IMAGE_FOLDER = "images/expected_outputs"
 TEST_ORIGINALS_PICKLE_FILE_NAME = "images/test_originals.pickle"
 
 FILE_NAMES = [
-    "even",
-    "square",
-    "wider",
-    "taller",
-    "pad1",
-    "pad2",
-    "pad3",
-    "odd",
-    "dark",
-    "gfish",
-    "bfish",
-    "bmpV1",
-    "evenB1",
-    "evenB2",
-    "oddB1",
-    "oddB2",
-    "evenC1",
-    "evenC2",
-    "oddC1",
-    "oddC2",
+    "even",  # 64 x 48
+    "square",  # 56 x 56
+    "wider",  # 39 x 26
+    "taller",  # 50 x 90
+    "pad1",  # 25 x 17
+    "pad2",  # 26 x 17
+    "pad3",  # 27 x 17
+    "odd",  # 41 x 23
+    "dark",  # 30 x 30
+    "gfish",  # 33 x 25
+    "bfish",  # 33 x 25
+    "bmpV1",  # 56 x 56
+    "evenB1",  # 56 x 48
+    "evenB2",  # 56 x 48
+    "oddB1",  # 39 x 23
+    "oddB2",  # 39 x 23
+    "evenC1",  # 56 x 48
+    "evenC2",  # 56 x 48
+    "oddC1",  # 39 x 23
+    "oddC2",  # 39 x 23
 ]
