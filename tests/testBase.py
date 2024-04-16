@@ -39,6 +39,7 @@ class TestBase(object):
     solution_images = {}
     test_parameters = {
         "color": (238, 0, 119),
+        "extra": "blah",
     }
     manip_func_name = None
     manip_func = None

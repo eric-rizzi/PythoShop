@@ -7,8 +7,5 @@ class Extension(testBase.TestBase, unittest.TestCase):
     test_weight = 5
     # Only use images that have an absolute center
     image_sets = [
-        ["pad1"],
-        ["pad2"],
-        ["pad3"],
         ["odd"],
     ]

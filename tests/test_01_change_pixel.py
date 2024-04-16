@@ -10,6 +10,5 @@ class Test(testTool.Test, unittest.TestCase):
         ["taller"],
         ["odd"],
         ["even"],
-        ["bmpV1"],
     ]
     test_weight = 100

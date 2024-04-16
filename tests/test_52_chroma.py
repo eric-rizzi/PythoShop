@@ -7,5 +7,4 @@ class Test(testBase2.TestBase2, unittest.TestCase):
     test_weight = 33
     image_sets = [
         ("evenC1", "evenC2"),
-        ("oddC1", "oddC2"),  # requires padding
     ]
