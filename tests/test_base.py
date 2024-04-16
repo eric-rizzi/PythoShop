@@ -67,11 +67,13 @@ class TestBase:
         pickled_originals = open(config.TEST_ORIGINALS_PICKLE_FILE_NAME, "rb")
         cls.original_images = pickle.load(pickled_originals)
         pickled_originals.close()
+
         try:
             if "IMAGE_MANIP" in os.environ:
                 spec = importlib.util.spec_from_file_location("image_manip.py", os.environ["IMAGE_MANIP"] + "/image_manip.py")
             else:
                 spec = importlib.util.spec_from_file_location("image_manip.py", os.getcwd() + "/../image_manip.py")
+
             cls.manip_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(cls.manip_module)
             if cls.manip_func_name in dir(cls.manip_module):
@@ -97,7 +99,8 @@ class TestBase:
             )
 
         pickled_solutions_file_name = cls.__module__ + ".pickle"
-        pickled_solutions = open(pickled_solutions_file_name, "rb")
+        pickled_solutions_file_path = os.path.join(config.EXPECTED_OUTPUT_IMAGE_FOLDER, pickled_solutions_file_name)
+        pickled_solutions = open(pickled_solutions_file_path, "rb")
         cls.solution_images = pickle.load(pickled_solutions)
         pickled_solutions.close()
 
