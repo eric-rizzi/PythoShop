@@ -33,7 +33,7 @@ def create_artifacts_for_tests(
 
     print(f"Starting pickling of images for test {test_name}")
     solution_images: dict[str, bytes] = {}
-    pickle_file_name = test_module_name + ".pickle"
+    pickle_file_name = test_module_name.split(".")[-1] + ".pickle"
     pickle_file_path = os.path.join(config.EXPECTED_OUTPUT_IMAGE_FOLDER, pickle_file_name)
 
     for original_file_names in test_image_sets:
