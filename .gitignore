@@ -2,8 +2,6 @@
 *.bmp
 *.jpg
 *.pickle
-image_manip.py
-admin/
 
 __pycache__/
 .mypy_cache/
