@@ -2,6 +2,8 @@
 
 ## To build "expected outputs" for tests
 
+`admin/pickle_images.py`
+
 ## To copy required files into student's GoogleDocs
 
-`update_students_files.py`
+`admin/update_students_files.py`
