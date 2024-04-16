@@ -111,25 +111,23 @@ def change_pixel(image, clicked_coordinate, **kwargs):
 
 
 @export_filter
-def draw_hline(image, color, extra="0", **kwargs) -> None:
-
+def draw_hline(image, **kwargs) -> None:
     middle_height = get_height(image) // 2
     width = get_width(image)
     for x in range(width):
-        set_pixel_rgb(image, (x, middle_height), color)
+        set_pixel_rgb(image, (x, middle_height), kwargs["color"])
 
 
 @export_filter
-def draw_vline(image, color, extra="0", **kwargs) -> None:
-
+def draw_vline(image, **kwargs) -> None:
     middle_width = get_width(image) // 2
     height = get_height(image)
     for y in range(height):
-        set_pixel_rgb(image, (middle_width, y), color)
+        set_pixel_rgb(image, (middle_width, y), kwargs["color"])
 
 
 @export_filter
-def remove_red(image, color, extra="0", **kwargs) -> None:
+def remove_red(image, **kwargs) -> None:
     width = get_width(image)
     height = get_height(image)
 
@@ -140,7 +138,7 @@ def remove_red(image, color, extra="0", **kwargs) -> None:
 
 
 @export_filter
-def remove_green(image, color, extra="0", **kwargs) -> None:
+def remove_green(image, **kwargs) -> None:
     width = get_width(image)
     height = get_height(image)
 
@@ -151,9 +149,9 @@ def remove_green(image, color, extra="0", **kwargs) -> None:
 
 
 @export_filter
-def blend_other(image: io.BytesIO, other_image: io.BytesIO, color: tuple[int, int, int], extra="0.5", **kwargs) -> io.BytesIO:
+def blend_other(image: io.BytesIO, other_image: io.BytesIO, **kwargs) -> io.BytesIO:
     try:
-        percentage1 = float(extra)
+        percentage1 = float(kwargs["extra"])
     except ValueError:
         percentage1 = 0.5
     if percentage1 < 0 or percentage1 > 1:
@@ -186,19 +184,19 @@ def blend_other(image: io.BytesIO, other_image: io.BytesIO, color: tuple[int, in
 
 
 @export_filter
-def draw_centered_hline(image, color, extra="0", **kwargs) -> None:
-    draw_hline(image, color, extra, kwargs=kwargs)
+def draw_centered_hline(image, **kwargs) -> None:
+    draw_hline(image, kwargs=kwargs)
 
 
 @export_filter
-def draw_centered_vline(image, color, extra="0", **kwargs) -> None:
-    draw_vline(image, color, extra, kwargs=kwargs)
+def draw_centered_vline(image, **kwargs) -> None:
+    draw_vline(image, kwargs=kwargs)
 
 
 @export_filter
-def intensify(image, color, extra="1.0", **kwargs):
+def intensify(image, **kwargs):
     try:
-        intensification = float(extra)
+        intensification = float(kwargs["extra"])
     except ValueError:
         intensification = 1
     if intensification > 1 or intensification < 0:
