@@ -4,6 +4,14 @@ from pytho_shop_exports import export_filter, export_tool
 
 
 def create_bmp(width: int, height: int) -> io.BytesIO:
+    """
+    Create a blank bitmap image (all black) that can then be customized by
+    setting certain pixels.
+
+    :param width: The width of the new bitmap image
+    :param height: The height of the new bitmap image
+    :returns: A list of bytes that represent the bitmap image
+    """
     row_size = width * 3
     row_padding = 0
     if row_size % 4 != 0:
@@ -61,7 +69,7 @@ def seek_x_y(image, x_y_tuple: tuple[int, int]) -> None:
     Helper function to seek to start of the pixel at a given (x, y) coordinate
 
     :param image: The bmp bytes
-    :param x_y_tuble: An (x, y) tuple that represents the coordinates of a particular pixel
+    :param x_y_tuple: An (x, y) tuple that represents the coordinates of a particular pixel
     :returns: None
     """
     image.seek(get_fpp(image) + 3 * ((get_width(image) * x_y_tuple[1] + x_y_tuple[0])))
@@ -72,7 +80,7 @@ def get_pixel_rgb(image, x_y_tuple: tuple[int, int]) -> tuple[int, int, int]:
     Helper function to get the RGB value of a particular pixel
 
     :param image: The bmp bytes
-    :param x_y_tuble: An (x, y) tuple that represents the coordinates of a particular pixel
+    :param x_y_tuple: An (x, y) tuple that represents the coordinates of a particular pixel
     :returns: (r, g, b) tuple
     """
     seek_x_y(image, x_y_tuple)
@@ -87,7 +95,7 @@ def set_pixel_rgb(image, x_y_tuple: tuple[int, int], r_g_b_tuple: tuple[int, int
     Helper function to set the RGB value of a particular pixel
 
     :param image: The bmp bytes
-    :param x_y_tuble: An (x, y) tuple that represents the coordinates of a particular pixel
+    :param x_y_tuple: An (x, y) tuple that represents the coordinates of a particular pixel
     :param r_g_b_tuple: An (r, g, b) tuple that represents color to set pixel to
     :returns: None
     """

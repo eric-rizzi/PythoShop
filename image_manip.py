@@ -4,6 +4,14 @@ from pytho_shop_exports import export_filter, export_tool
 
 
 def create_bmp(width: int, height: int) -> io.BytesIO:
+    """
+    Create a blank bitmap image (all black) that can then be customized by
+    setting certain pixels.
+
+    :param width: The width of the new bitmap image
+    :param height: The height of the new bitmap image
+    :returns: A list of bytes that represent the bitmap image
+    """
     row_size = width * 3
     row_padding = 0
     if row_size % 4 != 0:
@@ -61,7 +69,7 @@ def seek_x_y(image, x_y_tuple: tuple[int, int]) -> None:
     Helper function to seek to start of the pixel at a given (x, y) coordinate
 
     :param image: The bmp bytes
-    :param x_y_tuble: An (x, y) tuple that represents the coordinates of a particular pixel
+    :param x_y_tuple: An (x, y) tuple that represents the coordinates of a particular pixel
     :returns: None
     """
     image.seek(get_fpp(image) + 3 * ((get_width(image) * x_y_tuple[1] + x_y_tuple[0])))
@@ -72,7 +80,7 @@ def get_pixel_rgb(image, x_y_tuple: tuple[int, int]) -> tuple[int, int, int]:
     Helper function to get the RGB value of a particular pixel
 
     :param image: The bmp bytes
-    :param x_y_tuble: An (x, y) tuple that represents the coordinates of a particular pixel
+    :param x_y_tuple: An (x, y) tuple that represents the coordinates of a particular pixel
     :returns: (r, g, b) tuple
     """
     seek_x_y(image, x_y_tuple)
@@ -87,7 +95,7 @@ def set_pixel_rgb(image, x_y_tuple: tuple[int, int], r_g_b_tuple: tuple[int, int
     Helper function to set the RGB value of a particular pixel
 
     :param image: The bmp bytes
-    :param x_y_tuble: An (x, y) tuple that represents the coordinates of a particular pixel
+    :param x_y_tuple: An (x, y) tuple that represents the coordinates of a particular pixel
     :param r_g_b_tuple: An (r, g, b) tuple that represents color to set pixel to
     :returns: None
     """
@@ -100,7 +108,6 @@ def set_pixel_rgb(image, x_y_tuple: tuple[int, int], r_g_b_tuple: tuple[int, int
 @export_tool
 def change_pixel(image, clicked_coordinate, **kwargs):
     set_pixel_rgb(image, clicked_coordinate, kwargs["color"])
-    print(clicked_coordinate)
 
 
 @export_filter
@@ -176,3 +183,51 @@ def blend_other(image: io.BytesIO, other_image: io.BytesIO, color: tuple[int, in
 
     result.seek(0)
     return result
+
+
+def draw_centered_hline(image, color, extra="0", **kwargs) -> None:
+    draw_hline(image, color, extra, kwargs=kwargs)
+
+
+def draw_centered_vline(image, color, extra="0", **kwargs) -> None:
+    draw_vline(image, color, extra, kwargs=kwargs)
+
+
+@export_filter
+def intensify(image, color, extra="1.0", **kwargs):
+    try:
+        intensification = float(extra)
+    except ValueError:
+        intensification = 1
+    if intensification > 1 or intensification < 0:
+        raise ValueError("The intensification (extra) must be between 0 and 1")
+
+    first_pixel = get_fpp(image)
+    width = get_width(image)
+    height = get_height(image)
+
+    row_size = width * 3
+    # Rows need to be padded to a multiple of 4 bytes
+    row_padding = 0
+    if row_size % 4 != 0:
+        row_padding = 4 - row_size % 4
+        row_size += row_padding
+
+    for row in range(height):  # go through every row in the image
+        image.seek(first_pixel + row * row_size)
+        for pixel in range(width):  # go through every pixel in the current row
+            b, g, r = image.read(3)
+            if b > 127.5:
+                b = round(b + (255 - b) * intensification)
+            else:
+                b = round(b - b * intensification)
+            if g > 127.5:
+                g = round(g + (255 - g) * intensification)
+            else:
+                g = round(g - g * intensification)
+            if r > 127.5:
+                r = round(r + (255 - r) * intensification)
+            else:
+                r = round(r - r * intensification)
+            image.seek(-3, 1)
+            image.write(bytes([b, g, r]))
