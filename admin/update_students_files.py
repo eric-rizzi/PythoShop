@@ -62,9 +62,9 @@ TEST_FILES[6] = glob.glob("tests/test_6*")
 
 if __name__ == "__main__":
 
-    COPY_LEVEL = 0
+    ASSIGNMENT_NUMBER = 1
     test_files_to_copy = []
-    for i in range(0, COPY_LEVEL + 1):
+    for i in range(0, ASSIGNMENT_NUMBER + 1):
         test_files_to_copy += TEST_FILES[i]
 
     for student_folder in students.STUDENT_FOLDERS:
