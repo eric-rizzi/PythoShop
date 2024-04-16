@@ -185,10 +185,12 @@ def blend_other(image: io.BytesIO, other_image: io.BytesIO, color: tuple[int, in
     return result
 
 
+@export_filter
 def draw_centered_hline(image, color, extra="0", **kwargs) -> None:
     draw_hline(image, color, extra, kwargs=kwargs)
 
 
+@export_filter
 def draw_centered_vline(image, color, extra="0", **kwargs) -> None:
     draw_vline(image, color, extra, kwargs=kwargs)
 
