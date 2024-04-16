@@ -8,11 +8,11 @@ import tests.test_base as test_base
 import tests.test_files as test_files
 
 
-class TestTimeout(Exception):
+class TestTimeoutException(Exception):
     pass
 
 
-class test_timeout:
+class TestTimeout:
     def __init__(self, seconds, error_message=None):
         if error_message is None:
             error_message = "test timed out after {}s.".format(seconds)
@@ -20,7 +20,7 @@ class test_timeout:
             self.error_message = error_message
 
     def handle_timeout(self, signum, frame):
-        raise TestTimeout(self.error_message)
+        raise TestTimeoutException(self.error_message)
 
     def __enter__(self):
         if not "Windows" in platform.system():
@@ -45,7 +45,7 @@ class TestBase3(test_base.TestBase):
         self.__class__.test_parameters = self.__class__.test_parameters.copy()
 
     def test_images(self):
-        with test_timeout(10):
+        with TestTimeout(10):
             if self.image_sets is None:
                 self.image_sets = list([file_name] for file_name in test_files.FILE_NAMES)
             for image_set in self.image_sets:

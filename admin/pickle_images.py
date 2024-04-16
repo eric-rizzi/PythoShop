@@ -27,6 +27,7 @@ def prep_expected_outputs_folder() -> None:
 
 def create_artifacts_for_tests(
     test_image_sets: list[list[str]],
+    original_images: dict[str, bytes],
     *,
     test_module_name: str,
     test_name: str,
@@ -118,4 +119,10 @@ if __name__ == "__main__":
             # Unless otherwise specified, use all images
             test_image_sets = list([file_name] for file_name in test_files.FILE_NAMES)
 
-        create_artifacts_for_tests(test_image_sets, test_module_name=test_module_name, test_name=test_name, args_name=args_name)
+        create_artifacts_for_tests(
+            test_image_sets,
+            original_images,
+            test_module_name=test_module_name,
+            test_name=test_name,
+            args_name=args_name,
+        )
