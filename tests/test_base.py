@@ -69,10 +69,7 @@ class TestBase:
         pickled_originals.close()
 
         try:
-            if "IMAGE_MANIP" in os.environ:
-                spec = importlib.util.spec_from_file_location("image_manip.py", os.environ["IMAGE_MANIP"] + "/image_manip.py")
-            else:
-                spec = importlib.util.spec_from_file_location("image_manip.py", os.getcwd() + "/../image_manip.py")
+            spec = importlib.util.spec_from_file_location("image_manip.py", "image_manip.py")
 
             cls.manip_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(cls.manip_module)
@@ -82,11 +79,6 @@ class TestBase:
                 raise unittest.SkipTest(cls.__module__ + ": function " + cls.manip_func_name + "() is not available to test")
         except SyntaxError:
             raise unittest.SkipTest(cls.__module__ + ": image_manip.py has a syntax error and can't be tested")
-
-        print("----------", cls.manip_func_name)
-        print("Inspect args", inspect.getfullargspec(cls.manip_func))
-        print("Class test params", len(cls.test_parameters))
-        print("Class image params", cls.num_image_parameters)
 
         if len(inspect.getfullargspec(cls.manip_func).args) < len(cls.test_parameters) + cls.num_image_parameters:
             raise unittest.SkipTest(
@@ -118,7 +110,7 @@ class TestBase:
                         try:
                             static_manip_func(image_file, **self.test_parameters)
                         except Exception as e:
-                            self.assertTrue(False, "Running on " + orig_file_name + " casused an exception: " + str(e))
+                            self.assertTrue(False, "Running on " + orig_file_name + " caused an exception: " + str(e))
                         first_pixel_index = int.from_bytes(self.solution_images[test_file_name][10:14], "little")
                         width = int.from_bytes(self.solution_images[test_file_name][18:22], "little")
                         height = int.from_bytes(self.solution_images[test_file_name][22:26], "little")

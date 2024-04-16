@@ -67,7 +67,7 @@ class TestResult(unittest.TextTestResult):
 
 
 if __name__ == "__main__":
-    testSuite = unittest.defaultTestLoader.discover(".")
+    testSuite = unittest.defaultTestLoader.discover("tests")
     testProgram = unittest.TextTestRunner(stream=sys.stdout, verbosity=2)
     testProgram.resultclass = TestResult
     testResults = testProgram.run(testSuite)

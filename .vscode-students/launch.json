@@ -29,12 +29,11 @@
             "name": "Tests",
             "type": "python",
             "request": "launch",
-            "module": "test_runner",
+            "program": "tests/test_runner.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "cwd": "${workspaceFolder}/tests",
             "env": {
-                "PYTHONPATH": "${workspaceFolder}"
+                "PYTHONPATH": "${workspaceFolder}",
             }
         }
     ]
