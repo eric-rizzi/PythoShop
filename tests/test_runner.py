@@ -29,6 +29,7 @@ def dummyRun(
     raise RuntimeError("You should not be calling the subprocess.run function within your manipulation functions (only in __main__)")
 
 
+# Disable certain modules so students don't get confused
 sys.modules["subprocess"].run = dummyRun
 sys.modules["builtins"].input = dummyInput
 
