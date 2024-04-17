@@ -114,7 +114,6 @@ def mark_middle(image, **kwargs):
 @export_tool
 def draw_hline(image, clicked_coordinate, **kwargs):
     fpp, width, height, bpp, row_size, padding = get_info(image)
-    breakpoint()
     x, y = clicked_coordinate
     color = list(reversed(kwargs["color"]))  # get it in bitmap (BGR) order
     try:
@@ -167,35 +166,35 @@ def draw_sloping_lines(image, **kwargs):
         image.write(color)
 
 
-@export_tool
-def draw_x(image, clicked_coordinate, **kwargs):
-    try:
-        radius = int(kwargs["extra"])
-    except:
-        radius = 3
-    fpp, width, height, bpp, row_size, padding = get_info(image)
-    x, y = clicked_coordinate
-    length = radius * 2 + 1
-    if x - radius >= 0:
-        start_x = x - radius
-    else:
-        start_x = 0
-        length += x - radius
-    if x + radius + 1 > width:
-        length -= x + radius + 1 - width
-    for pixel in range(radius + 1):
-        if 0 < y - pixel < height and 0 < x - pixel < width:
-            image.seek(fpp + (width * 3 + padding) * (y - pixel) + (x - pixel) * 3)
-            image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
-        if 0 < y - pixel < height and 0 < x + pixel < width:
-            image.seek(fpp + (width * 3 + padding) * (y - pixel) + (x + pixel) * 3)
-            image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
-        if 0 < y + pixel < height and 0 < x - pixel < width:
-            image.seek(fpp + (width * 3 + padding) * (y + pixel) + (x - pixel) * 3)
-            image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
-        if 0 < y + pixel < height and 0 < x + pixel < width:
-            image.seek(fpp + (width * 3 + padding) * (y + pixel) + (x + pixel) * 3)
-            image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
+# @export_tool
+# def draw_x(image, clicked_coordinate, **kwargs):
+#     try:
+#         radius = int(kwargs["extra"])
+#     except:
+#         radius = 3
+#     fpp, width, height, bpp, row_size, padding = get_info(image)
+#     x, y = clicked_coordinate
+#     length = radius * 2 + 1
+#     if x - radius >= 0:
+#         start_x = x - radius
+#     else:
+#         start_x = 0
+#         length += x - radius
+#     if x + radius + 1 > width:
+#         length -= x + radius + 1 - width
+#     for pixel in range(radius + 1):
+#         if 0 < y - pixel < height and 0 < x - pixel < width:
+#             image.seek(fpp + (width * 3 + padding) * (y - pixel) + (x - pixel) * 3)
+#             image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
+#         if 0 < y - pixel < height and 0 < x + pixel < width:
+#             image.seek(fpp + (width * 3 + padding) * (y - pixel) + (x + pixel) * 3)
+#             image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
+#         if 0 < y + pixel < height and 0 < x - pixel < width:
+#             image.seek(fpp + (width * 3 + padding) * (y + pixel) + (x - pixel) * 3)
+#             image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
+#         if 0 < y + pixel < height and 0 < x + pixel < width:
+#             image.seek(fpp + (width * 3 + padding) * (y + pixel) + (x + pixel) * 3)
+#             image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
 
 
 @export_tool
@@ -284,7 +283,7 @@ def make_static(image, **kwargs):
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
     try:
         distance = int(kwargs["extra"])
-    except ValueError:
+    except (KeyError, ValueError):
         distance = 255
     for row in range(height):  # go through every row in the image
         image.seek(first_pixel + row * row_size)
@@ -611,7 +610,7 @@ def magentify(image, **kwargs):
 def intensify(image, **kwargs):
     try:
         intensification = float(kwargs["extra"])
-    except ValueError:
+    except (ValueError, KeyError):
         intensification = 1.0
     if intensification > 1 or intensification < 0:
         raise ValueError("The intensification (extra) must be between 0 and 1")
@@ -643,7 +642,7 @@ def make_two_tone(image, **kwargs):
         dark = [int(x) for x in kwargs["extra"].split(",")]
         if len(dark) != 3:
             dark = (0, 0, 0)
-    except ValueError:
+    except (ValueError, KeyError):
         dark = (0, 0, 0)
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
     for row in range(height):  # go through every row in the image
@@ -690,7 +689,7 @@ def make_n_tone(image, **kwargs):
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
     try:
         n = int(kwargs["extra"])
-    except ValueError:
+    except (ValueError, KeyError):
         raise ValueError("Extra has to be an integer intdicating the number of levels")
     r, g, b = kwargs["color"]
     r_delta = r / (n - 1)
@@ -789,7 +788,7 @@ def make_better_two_tone(image, **kwargs):
         dark = [int(x) for x in kwargs["extra"].split(",")]
         if len(dark) != 3:
             dark = (0, 0, 0)
-    except ValueError:
+    except (ValueError, KeyError):
         dark = (0, 0, 0)
     total_brightness = 0
     for row in range(height):  # go through every row in the image
@@ -851,7 +850,7 @@ def smudge(image, clicked_coordinate, **kwargs):
     clicked_x, clicked_y = clicked_coordinate
     try:
         effect_radius = int(kwargs["extra"])
-    except ValueError:
+    except (ValueError, KeyError):
         effect_radius = 1
     go_to(image, (clicked_x, clicked_y))
     sb, sg, sr = image.read(3)
@@ -873,8 +872,9 @@ def smudge(image, clicked_coordinate, **kwargs):
 def blend_other(image, other_image, **kwargs):
     try:
         percentage1 = float(kwargs["extra"])
-    except ValueError:
+    except (ValueError, KeyError):
         percentage1 = 0.5
+
     if percentage1 < 0 or percentage1 > 1:
         raise ValueError("The extra parameter must be a percentage (between 0 and 1)")
     percentage2 = 1 - percentage1
@@ -907,8 +907,9 @@ def chroma_overlay(image, other_image, **kwargs):
     target_chroma = kwargs["color"]
     try:
         tolerance = int(kwargs["extra"])
-    except ValueError:
+    except (ValueError, KeyError):
         tolerance = 100
+
     result = create_bmp(bg_width, bg_height)
     res_first_pixel, res_width, res_height, res_bpp, res_row_size, res_row_padding = get_info(result)
     for row in range(res_height):  # go through overlapping rows in the images
@@ -941,7 +942,7 @@ def chroma_overlay_stamp(image, clicked_coordinate, **kwargs):
     y_offset -= round(fg_height / 2)
     try:
         tolerance = int(kwargs["extra"])
-    except ValueError:
+    except (ValueError, KeyError):
         tolerance = 100
     result = create_bmp(bg_width, bg_height)
     res_first_pixel, res_width, res_height, res_bpp, res_row_size, res_row_padding = get_info(result)
