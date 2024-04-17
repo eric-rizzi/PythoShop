@@ -15,6 +15,7 @@ PYTHOSHOP_FILE_PATHS_TO_COPY = [
 ]
 VSCODE_FILE_PATHS_TO_COPY = [
     ".vscode-students/launch.json",
+    ".vscode-students/settings.json",
 ]
 
 
