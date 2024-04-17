@@ -64,6 +64,15 @@ def get_width(image) -> int:
     return int.from_bytes(image.read(4), byteorder="little")
 
 
+def get_padding(image) -> int:
+    width = get_width(image)
+    row_size = width * 3
+    if row_size % 4 != 0:
+        return 4 - row_size % 4
+    else:
+        return 0
+
+
 def seek_x_y(image, x_y_tuple: tuple[int, int]) -> None:
     """
     Helper function to seek to start of the pixel at a given (x, y) coordinate
@@ -72,7 +81,10 @@ def seek_x_y(image, x_y_tuple: tuple[int, int]) -> None:
     :param x_y_tuple: An (x, y) tuple that represents the coordinates of a particular pixel
     :returns: None
     """
-    image.seek(get_fpp(image) + 3 * ((get_width(image) * x_y_tuple[1] + x_y_tuple[0])))
+    fpp = get_fpp(image)
+    width = get_width(image)
+    padding = get_padding(image)
+    image.seek(fpp + ((width * 3 + padding) * x_y_tuple[1]) + (x_y_tuple[0] * 3))
 
 
 def get_pixel_rgb(image, x_y_tuple: tuple[int, int]) -> tuple[int, int, int]:
@@ -112,18 +124,34 @@ def change_pixel(image, clicked_coordinate, **kwargs):
 
 @export_filter
 def draw_hline(image, **kwargs) -> None:
-    middle_height = get_height(image) // 2
     width = get_width(image)
-    for x in range(width):
-        set_pixel_rgb(image, (x, middle_height), kwargs["color"])
+    x, y = kwargs["clicked_coordinate"]
+
+    try:
+        thickness = int(kwargs["extra"])
+    except:
+        thickness = 1
+
+    start_row = y - round(thickness / 2)
+    for alt_y in range(thickness):
+        for x in range(width):
+            set_pixel_rgb(image, (x, start_row + alt_y), kwargs["color"])
 
 
 @export_filter
 def draw_vline(image, **kwargs) -> None:
-    middle_width = get_width(image) // 2
     height = get_height(image)
-    for y in range(height):
-        set_pixel_rgb(image, (middle_width, y), kwargs["color"])
+    x, y = kwargs["clicked_coordinate"]
+
+    try:
+        thickness = int(kwargs["extra"])
+    except:
+        thickness = 1
+
+    start_column = x - round(thickness / 2)
+    for alt_x in range(thickness):
+        for y in range(height):
+            set_pixel_rgb(image, (start_column + alt_x, y), kwargs["color"])
 
 
 @export_filter
@@ -135,105 +163,3 @@ def remove_red(image, **kwargs) -> None:
         for y in range(height):
             r, g, b = get_pixel_rgb(image, (x, y))
             set_pixel_rgb(image, (x, y), (0, g, b))
-
-
-@export_filter
-def remove_green(image, **kwargs) -> None:
-    width = get_width(image)
-    height = get_height(image)
-
-    for x in range(width):
-        for y in range(height):
-            r, g, b = get_pixel_rgb(image, (x, y))
-            set_pixel_rgb(image, (x, y), (r, 0, b))
-
-
-@export_filter
-def blend_other(image: io.BytesIO, other_image: io.BytesIO, **kwargs) -> io.BytesIO:
-    try:
-        percentage1 = float(kwargs["extra"])
-    except ValueError:
-        percentage1 = 0.5
-    if percentage1 < 0 or percentage1 > 1:
-        raise ValueError("The extra parameter must be a percentage (between 0 and 1)")
-
-    percentage2 = 1 - percentage1
-
-    width_1 = get_width(image)
-    width_2 = get_width(other_image)
-    min_width = min(width_1, width_2)
-
-    height_1 = get_height(image)
-    height_2 = get_height(other_image)
-    min_height = min(height_1, height_2)
-
-    result = create_bmp(min_width, min_height)
-
-    for x in range(min_width):  # go through overlapping rows in the images
-        for y in range(min_height):
-            r1, g1, b1 = get_pixel_rgb(image, (x, y))
-            r2, g2, b2 = get_pixel_rgb(other_image, (x, y))
-            set_pixel_rgb(
-                result,
-                (x, y),
-                (round(r1 * percentage1 + r2 * percentage2), round(g1 * percentage1 + g2 * percentage2), round(b1 * percentage1 + b2 * percentage2)),
-            )
-
-    result.seek(0)
-    return result
-
-
-@export_filter
-def draw_centered_hline(image, **kwargs) -> None:
-    middle_height = get_height(image) // 2
-    width = get_width(image)
-    for x in range(width):
-        set_pixel_rgb(image, (x, middle_height), kwargs["color"])
-
-
-@export_filter
-def draw_centered_vline(image, **kwargs) -> None:
-    middle_width = get_width(image) // 2
-    height = get_height(image)
-    for y in range(height):
-        set_pixel_rgb(image, (middle_width, y), kwargs["color"])
-
-
-@export_filter
-def intensify(image, **kwargs):
-    try:
-        intensification = float(kwargs["extra"])
-    except ValueError:
-        intensification = 1
-    if intensification > 1 or intensification < 0:
-        raise ValueError("The intensification (extra) must be between 0 and 1")
-
-    first_pixel = get_fpp(image)
-    width = get_width(image)
-    height = get_height(image)
-
-    row_size = width * 3
-    # Rows need to be padded to a multiple of 4 bytes
-    row_padding = 0
-    if row_size % 4 != 0:
-        row_padding = 4 - row_size % 4
-        row_size += row_padding
-
-    for row in range(height):  # go through every row in the image
-        image.seek(first_pixel + row * row_size)
-        for pixel in range(width):  # go through every pixel in the current row
-            b, g, r = image.read(3)
-            if b > 127.5:
-                b = round(b + (255 - b) * intensification)
-            else:
-                b = round(b - b * intensification)
-            if g > 127.5:
-                g = round(g + (255 - g) * intensification)
-            else:
-                g = round(g - g * intensification)
-            if r > 127.5:
-                r = round(r + (255 - r) * intensification)
-            else:
-                r = round(r - r * intensification)
-            image.seek(-3, 1)
-            image.write(bytes([b, g, r]))

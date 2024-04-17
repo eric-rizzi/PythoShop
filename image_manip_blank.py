@@ -64,6 +64,15 @@ def get_width(image) -> int:
     return int.from_bytes(image.read(4), byteorder="little")
 
 
+def get_padding(image) -> int:
+    width = get_width(image)
+    row_size = width * 3
+    if row_size % 4 != 0:
+        return 4 - row_size % 4
+    else:
+        return 0
+
+
 def seek_x_y(image, x_y_tuple: tuple[int, int]) -> None:
     """
     Helper function to seek to start of the pixel at a given (x, y) coordinate
@@ -72,7 +81,10 @@ def seek_x_y(image, x_y_tuple: tuple[int, int]) -> None:
     :param x_y_tuple: An (x, y) tuple that represents the coordinates of a particular pixel
     :returns: None
     """
-    image.seek(get_fpp(image) + 3 * ((get_width(image) * x_y_tuple[1] + x_y_tuple[0])))
+    fpp = get_fpp(image)
+    width = get_width(image)
+    padding = get_padding(image)
+    image.seek(fpp + ((width * 3 + padding) * x_y_tuple[1]) + (x_y_tuple[0] * 3))
 
 
 def get_pixel_rgb(image, x_y_tuple: tuple[int, int]) -> tuple[int, int, int]:
