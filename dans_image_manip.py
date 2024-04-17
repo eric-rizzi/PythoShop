@@ -148,35 +148,32 @@ def draw_centered_vline(image, **kwargs):
     draw_vline(image, (round(width / 2), 0), **kwargs)
 
 
-# @export_tool
-# def draw_x(image, clicked_coordinate, **kwargs):
-#     try:
-#         radius = int(kwargs["extra"])
-#     except:
-#         radius = 3
-#     fpp, width, height, bpp, row_size, padding = get_info(image)
-#     x, y = clicked_coordinate
-#     length = radius * 2 + 1
-#     if x - radius >= 0:
-#         start_x = x - radius
-#     else:
-#         start_x = 0
-#         length += x - radius
-#     if x + radius + 1 > width:
-#         length -= x + radius + 1 - width
-#     for pixel in range(radius + 1):
-#         if 0 < y - pixel < height and 0 < x - pixel < width:
-#             image.seek(fpp + (width * 3 + padding) * (y - pixel) + (x - pixel) * 3)
-#             image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
-#         if 0 < y - pixel < height and 0 < x + pixel < width:
-#             image.seek(fpp + (width * 3 + padding) * (y - pixel) + (x + pixel) * 3)
-#             image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
-#         if 0 < y + pixel < height and 0 < x - pixel < width:
-#             image.seek(fpp + (width * 3 + padding) * (y + pixel) + (x - pixel) * 3)
-#             image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
-#         if 0 < y + pixel < height and 0 < x + pixel < width:
-#             image.seek(fpp + (width * 3 + padding) * (y + pixel) + (x + pixel) * 3)
-#             image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
+@export_filter
+def draw_bisecting_diagonals(image, **kwargs):
+    # extra could be a width
+    first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
+    bmp_color = (kwargs["color"][2], kwargs["color"][1], kwargs["color"][0])
+    image.seek(first_pixel)
+    for y in range(height):
+        image.seek(first_pixel + row_size * y)
+        before = 0
+        length = 0
+        for x in range(width):
+            if x / width < y / height:
+                image.seek(3, 1)
+                before += 1
+            else:
+                image.write(bytes(bmp_color))
+                x += 1
+                length += 1
+                while x / width < (y + 1) / height:
+                    image.write(bytes(bmp_color))
+                    x += 1
+                    length += 1
+                break
+        image.seek(3 * (width - 2 * (before + length)), 1)
+        for pixel in range(length):
+            image.write(bytes(bmp_color))
 
 
 # Lesson: Changing parts of a pixel
