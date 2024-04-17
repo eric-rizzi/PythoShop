@@ -103,21 +103,22 @@ def change_pixel(image, clicked_coordinate, **kwargs):
 
 
 @export_filter
-def mark_middle(image, color, extra, **kwargs):
+def mark_middle(image, **kwargs):
     fpp, width, height, bpp, row_size, padding = get_info(image)
-    change_pixel(image, (round(width / 2), round(height / 2)), color, extra)
+    change_pixel(image, (round(width / 2), round(height / 2)), **kwargs)
 
 
 # Lesson: Draw some lines
 
 
 @export_tool
-def draw_hline(image, clicked_coordinate, color, extra, **kwargs):
+def draw_hline(image, clicked_coordinate, **kwargs):
     fpp, width, height, bpp, row_size, padding = get_info(image)
+    breakpoint()
     x, y = clicked_coordinate
-    color = list(reversed(color))  # get it in bitmap (BGR) order
+    color = list(reversed(kwargs["color"]))  # get it in bitmap (BGR) order
     try:
-        thickness = int(extra)
+        thickness = int(kwargs["extra"])
     except:
         thickness = 1
     start_row = y - round(thickness / 2)
@@ -127,12 +128,12 @@ def draw_hline(image, clicked_coordinate, color, extra, **kwargs):
 
 
 @export_tool
-def draw_vline(image, clicked_coordinate, color, extra, **kwargs):
+def draw_vline(image, clicked_coordinate, **kwargs):
     fpp, width, height, bpp, row_size, padding = get_info(image)
     x, y = clicked_coordinate
-    color = bytes(list(reversed(color)))
+    color = bytes(list(reversed(kwargs["color"])))
     try:
-        thickness = int(extra)
+        thickness = int(kwargs["extra"])
     except:
         thickness = 1
     start_x = x - round(thickness / 2)
@@ -145,19 +146,19 @@ def draw_vline(image, clicked_coordinate, color, extra, **kwargs):
 @export_filter
 def draw_centered_hline(image, **kwargs):
     fpp, width, height, bpp, row_size, padding = get_info(image)
-    draw_hline(image, (0, round(height / 2)), color, extra, **kwargs)
+    draw_hline(image, (0, round(height / 2)), **kwargs)
 
 
 @export_filter
 def draw_centered_vline(image, **kwargs):
     fpp, width, height, bpp, row_size, padding = get_info(image)
-    draw_vline(image, (round(width / 2), 0), color, extra, **kwargs)
+    draw_vline(image, (round(width / 2), 0), **kwargs)
 
 
 @export_filter
 def draw_sloping_lines(image, **kwargs):
     fpp, width, height, bpp, row_size, padding = get_info(image)
-    color = bytes(list(reversed(color)))
+    color = bytes(list(reversed(kwargs["color"])))
     min_dimension = min(width, height)
     for pixel in range(min_dimension):
         go_to(image, (pixel, pixel))
@@ -169,7 +170,7 @@ def draw_sloping_lines(image, **kwargs):
 @export_tool
 def draw_x(image, clicked_coordinate, **kwargs):
     try:
-        radius = int(extra)
+        radius = int(kwargs["extra"])
     except:
         radius = 3
     fpp, width, height, bpp, row_size, padding = get_info(image)
@@ -185,51 +186,51 @@ def draw_x(image, clicked_coordinate, **kwargs):
     for pixel in range(radius + 1):
         if 0 < y - pixel < height and 0 < x - pixel < width:
             image.seek(fpp + (width * 3 + padding) * (y - pixel) + (x - pixel) * 3)
-            image.write(bytes([color[2], color[1], color[0]]))
+            image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
         if 0 < y - pixel < height and 0 < x + pixel < width:
             image.seek(fpp + (width * 3 + padding) * (y - pixel) + (x + pixel) * 3)
-            image.write(bytes([color[2], color[1], color[0]]))
+            image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
         if 0 < y + pixel < height and 0 < x - pixel < width:
             image.seek(fpp + (width * 3 + padding) * (y + pixel) + (x - pixel) * 3)
-            image.write(bytes([color[2], color[1], color[0]]))
+            image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
         if 0 < y + pixel < height and 0 < x + pixel < width:
             image.seek(fpp + (width * 3 + padding) * (y + pixel) + (x + pixel) * 3)
-            image.write(bytes([color[2], color[1], color[0]]))
+            image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
 
 
 @export_tool
-def draw_x_hline(image, clicked_coordinate, color, extra, **kwargs):
+def draw_x_hline(image, clicked_coordinate, **kwargs):
     try:
-        radius = int(extra)
+        radius = int(kwargs["extra"])
     except:
         radius = 0
     fpp, width, height, bpp, row_size, padding = get_info(image)
     clicked_x, y = clicked_coordinate
     for x in range(clicked_x, width + radius + 1, radius * 2 + 2):
-        draw_x(image, (x, y), color, extra)
+        draw_x(image, (x, y), **kwargs)
     for x in range(clicked_x, -1 * radius, -1 * radius * 2 - 2):
-        draw_x(image, (x, y), color, extra)
+        draw_x(image, (x, y), **kwargs)
 
 
 @export_tool
 def draw_x_vline(image, clicked_coordinate, **kwargs):
     try:
-        radius = int(extra)
+        radius = int(kwargs["extra"])
     except:
         radius = 0
     fpp, width, height, bpp, row_size, padding = get_info(image)
     x, clicked_y = clicked_coordinate
     for y in range(clicked_y, height + radius + 1, radius * 2 + 2):
-        draw_x(image, (x, y), color, extra)
+        draw_x(image, (x, y), **kwargs)
     for y in range(clicked_y, -1 * radius, -1 * radius * 2 - 2):
-        draw_x(image, (x, y), color, extra)
+        draw_x(image, (x, y), **kwargs)
 
 
 @export_filter
 def draw_bisecting_diagonals(image, **kwargs):
     # extra could be a width
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
-    bmp_color = (color[2], color[1], color[0])
+    bmp_color = (kwargs["color"][2], kwargs["color"][1], kwargs["color"][0])
     image.seek(first_pixel)
     for y in range(height):
         image.seek(first_pixel + row_size * y)
@@ -282,7 +283,7 @@ def make_red(image, **kwargs):
 def make_static(image, **kwargs):
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
     try:
-        distance = int(extra)
+        distance = int(kwargs["extra"])
     except ValueError:
         distance = 255
     for row in range(height):  # go through every row in the image
@@ -291,9 +292,9 @@ def make_static(image, **kwargs):
             image.write(
                 bytes(
                     [
-                        random.randint(max(0, color[2] - distance), min(255, color[2] + distance)),
-                        random.randint(max(0, color[1] - distance), min(255, color[1] + distance)),
-                        random.randint(max(0, color[0] - distance), min(255, color[0] + distance)),
+                        random.randint(max(0, kwargs["color"][2] - distance), min(255, kwargs["color"][2] + distance)),
+                        random.randint(max(0, kwargs["color"][1] - distance), min(255, kwargs["color"][1] + distance)),
+                        random.randint(max(0, kwargs["color"][0] - distance), min(255, kwargs["color"][0] + distance)),
                     ]
                 )
             )
@@ -609,7 +610,7 @@ def magentify(image, **kwargs):
 @export_filter
 def intensify(image, **kwargs):
     try:
-        intensification = float(extra)
+        intensification = float(kwargs["extra"])
     except ValueError:
         intensification = 1.0
     if intensification > 1 or intensification < 0:
@@ -636,10 +637,10 @@ def intensify(image, **kwargs):
 
 
 @export_filter
-def make_two_tone(image, color, extra, **kwargs):
-    light = color
+def make_two_tone(image, **kwargs):
+    light = kwargs["color"]
     try:
-        dark = [int(x) for x in extra.split(",")]
+        dark = [int(x) for x in kwargs["extra"].split(",")]
         if len(dark) != 3:
             dark = (0, 0, 0)
     except ValueError:
@@ -660,14 +661,14 @@ def make_two_tone(image, color, extra, **kwargs):
 @export_filter
 def make_four_tone(image, **kwargs):
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
-    r, g, b = color
+    r, g, b = kwargs["color"]
     r_delta = r / 3
     g_delta = g / 3
     b_delta = b / 3
     darker = (0, 0, 0)
     dark = (int(r_delta), int(g_delta), int(b_delta))
     medium = (int(r_delta * 2), int(g_delta * 2), int(b_delta * 2))
-    light = color
+    light = kwargs["color"]
     for row in range(height):  # go through every row in the image
         image.seek(first_pixel + row * row_size)
         for pixel in range(width):  # go through every pixel in the current row
@@ -688,10 +689,10 @@ def make_four_tone(image, **kwargs):
 def make_n_tone(image, **kwargs):
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
     try:
-        n = int(extra)
+        n = int(kwargs["extra"])
     except ValueError:
         raise ValueError("Extra has to be an integer intdicating the number of levels")
-    r, g, b = color
+    r, g, b = kwargs["color"]
     r_delta = r / (n - 1)
     g_delta = g / (n - 1)
     b_delta = b / (n - 1)
@@ -783,9 +784,9 @@ def saturate(image, **kwargs):
 @export_filter
 def make_better_two_tone(image, **kwargs):
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
-    light = color
+    light = kwargs["color"]
     try:
-        dark = [int(x) for x in extra.split(",")]
+        dark = [int(x) for x in kwargs["extra"].split(",")]
         if len(dark) != 3:
             dark = (0, 0, 0)
     except ValueError:
@@ -812,14 +813,14 @@ def make_better_two_tone(image, **kwargs):
 @export_filter
 def make_better_four_tone(image, **kwargs):
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
-    r, g, b = color
+    r, g, b = kwargs["color"]
     r_delta = r / 3
     g_delta = g / 3
     b_delta = b / 3
     darker = (0, 0, 0)
     dark = (int(r_delta), int(g_delta), int(b_delta))
     medium = (int(r_delta * 2), int(g_delta * 2), int(b_delta * 2))
-    light = color
+    light = kwargs["color"]
     total_brightness = 0
     for row in range(height):  # go through every row in the image
         image.seek(first_pixel + row * row_size)
@@ -849,7 +850,7 @@ def smudge(image, clicked_coordinate, **kwargs):
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
     clicked_x, clicked_y = clicked_coordinate
     try:
-        effect_radius = int(extra)
+        effect_radius = int(kwargs["extra"])
     except ValueError:
         effect_radius = 1
     go_to(image, (clicked_x, clicked_y))
@@ -871,7 +872,7 @@ def smudge(image, clicked_coordinate, **kwargs):
 @export_filter
 def blend_other(image, other_image, **kwargs):
     try:
-        percentage1 = float(extra)
+        percentage1 = float(kwargs["extra"])
     except ValueError:
         percentage1 = 0.5
     if percentage1 < 0 or percentage1 > 1:
@@ -903,9 +904,9 @@ def chroma_overlay(image, other_image, **kwargs):
     foreground_image = other_image
     bg_first_pixel, bg_width, bg_height, bg_bpp, bg_row_size, bg_row_padding = get_info(background_image)
     fg_first_pixel, fg_width, fg_height, fg_bpp, fg_row_size, fg_row_padding = get_info(foreground_image)
-    target_chroma = color
+    target_chroma = kwargs["color"]
     try:
-        tolerance = int(extra)
+        tolerance = int(kwargs["extra"])
     except ValueError:
         tolerance = 100
     result = create_bmp(bg_width, bg_height)
@@ -931,15 +932,15 @@ def chroma_overlay(image, other_image, **kwargs):
 @export_tool
 def chroma_overlay_stamp(image, clicked_coordinate, **kwargs):
     background_image = image
-    foreground_image = other_image
+    foreground_image = kwargs["other_image"]
     bg_first_pixel, bg_width, bg_height, bg_bpp, bg_row_size, bg_row_padding = get_info(background_image)
     fg_first_pixel, fg_width, fg_height, fg_bpp, fg_row_size, fg_row_padding = get_info(foreground_image)
-    target_chroma = color
+    target_chroma = kwargs["color"]
     x_offset, y_offset = clicked_coordinate
     x_offset -= round(fg_width / 2)
     y_offset -= round(fg_height / 2)
     try:
-        tolerance = int(extra)
+        tolerance = int(kwargs["extra"])
     except ValueError:
         tolerance = 100
     result = create_bmp(bg_width, bg_height)
@@ -966,7 +967,7 @@ def chroma_overlay_stamp(image, clicked_coordinate, **kwargs):
 
 
 @export_filter
-def fade_in_vertical(image, color, **kwargs):
+def fade_in_vertical(image, **kwargs):
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
     for row in range(height):  # go through every row in the image
         image.seek(first_pixel + row * row_size)
@@ -975,7 +976,15 @@ def fade_in_vertical(image, color, **kwargs):
         for pixel in range(width):  # go through every pixel in the current row
             b, g, r = image.read(3)
             image.seek(-3, 1)
-            image.write(bytes([round(b * percent + color[2] * converse), round(g * percent + color[1] * converse), round(r * percent + color[0] * converse)]))
+            image.write(
+                bytes(
+                    [
+                        round(b * percent + kwargs["color"][2] * converse),
+                        round(g * percent + kwargs["color"][1] * converse),
+                        round(r * percent + kwargs["color"][0] * converse),
+                    ]
+                )
+            )
 
 
 @export_filter
@@ -988,7 +997,15 @@ def fade_out_vertical(image, **kwargs):
         for pixel in range(width):  # go through every pixel in the current row
             b, g, r = image.read(3)
             image.seek(-3, 1)
-            image.write(bytes([round(b * percent + color[2] * converse), round(g * percent + color[1] * converse), round(r * percent + color[0] * converse)]))
+            image.write(
+                bytes(
+                    [
+                        round(b * percent + kwargs["color"][2] * converse),
+                        round(g * percent + kwargs["color"][1] * converse),
+                        round(r * percent + kwargs["color"][0] * converse),
+                    ]
+                )
+            )
 
 
 @export_filter
@@ -1001,7 +1018,15 @@ def fade_in_horizontal(image, **kwargs):
             converse = 1 - percent
             b, g, r = image.read(3)
             image.seek(-3, 1)
-            image.write(bytes([round(b * percent + color[2] * converse), round(g * percent + color[1] * converse), round(r * percent + color[0] * converse)]))
+            image.write(
+                bytes(
+                    [
+                        round(b * percent + kwargs["color"][2] * converse),
+                        round(g * percent + kwargs["color"][1] * converse),
+                        round(r * percent + kwargs["color"][0] * converse),
+                    ]
+                )
+            )
 
 
 @export_filter
@@ -1014,14 +1039,22 @@ def fade_out_horizontal(image, **kwargs):
             converse = 1 - percent
             b, g, r = image.read(3)
             image.seek(-3, 1)
-            image.write(bytes([round(b * percent + color[2] * converse), round(g * percent + color[1] * converse), round(r * percent + color[0] * converse)]))
+            image.write(
+                bytes(
+                    [
+                        round(b * percent + kwargs["color"][2] * converse),
+                        round(g * percent + kwargs["color"][1] * converse),
+                        round(r * percent + kwargs["color"][0] * converse),
+                    ]
+                )
+            )
 
 
 @export_filter
 def make_line_drawing(image, **kwargs):
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
     try:
-        tolerance = int(extra)
+        tolerance = int(kwargs["extra"])
     except:
         tolerance = 10
     new_image = create_bmp(width - 1, height)
@@ -1032,7 +1065,7 @@ def make_line_drawing(image, **kwargs):
             b1, g1, r1, b2, g2, r2 = image.read(6)
             new_image.seek(new_first_pixel + row * new_row_size + pixel * 3)
             if abs((b1 + g1 + r1) - (b2 + g2 + r2)) > tolerance:
-                new_image.write(bytes([color[2], color[1], color[0]]))
+                new_image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
             else:
                 new_image.write(bytes([255, 255, 255]))
     return new_image
@@ -1274,7 +1307,7 @@ def better_enlarge(image, **kwargs):
 def resize(image, **kwargs):
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
     try:
-        multiplier = float(extra)
+        multiplier = float(kwargs["extra"])
     except:
         raise ValueError("Extra parameter (the multiplier) must be specified")
     if multiplier <= 0:
@@ -1294,11 +1327,11 @@ def resize(image, **kwargs):
 
 # todo: put this in a lesson and test it
 @export_filter
-def make_better_line_drawing(image, extra, **kwargs):
+def make_better_line_drawing(image, **kwargs):
     # todo: use extra as the color of the lines
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
     try:
-        tolerance = int(extra)
+        tolerance = int(kwargs["extra"])
     except:
         tolerance = 15
     new_image = create_bmp(width - 1, height)
@@ -1316,10 +1349,10 @@ def make_better_line_drawing(image, extra, **kwargs):
 
 
 @export_filter
-def make_autostereogram(image, other_image, **kwargs):
+def make_autostereogram(image, **kwargs):
     max_shift = 30
     depth_image = image
-    pattern_image = other_image
+    pattern_image = kwargs["other_image"]
     depth_first_pixel, depth_width, depth_height, depth_bpp, depth_row_size, depth_row_padding = get_info(depth_image)
     pattern_first_pixel, pattern_width, pattern_height, pattern_bpp, pattern_row_size, pattern_row_padding = get_info(pattern_image)
     autostereogram = create_bmp(depth_width + pattern_width, depth_height)
@@ -1345,8 +1378,8 @@ def make_autostereogram(image, other_image, **kwargs):
 
 
 @export_filter
-def hide_message_in_padding(image, extra, **kwargs):
-    message = extra
+def hide_message_in_padding(image, **kwargs):
+    message = kwargs["extra"]
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
     if row_padding == 0:
         raise ValueError("Can't hide a message in an image without padding")
@@ -1385,7 +1418,7 @@ def find_message_in_padding(image, **kwargs):
 
 @export_filter
 def hide_message_in_lobs(image, **kwargs):
-    message = extra
+    message = kwargs["extra"]
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
     new_image = create_bmp(width, height)
     new_first_pixel, new_width, new_height, new_bpp, new_row_size, new_row_padding = get_info(new_image)
