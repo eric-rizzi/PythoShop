@@ -58,7 +58,7 @@ class TestBase3(test_base.TestBase):
                     with tempfile.TemporaryFile() as image1:
                         image1.write(self.original_images[image1_file_name])
                         try:
-                            result = static_manip_func(image1, *self.test_parameters.values())
+                            result = static_manip_func(image1, **self.test_parameters)
                         except Exception as e:
                             self.assertTrue(False, "Running on " + image1_file_name + " casused an exception: " + str(e))
                         first_pixel_index = int.from_bytes(self.solution_images[test_file_name][10:14], "little")
