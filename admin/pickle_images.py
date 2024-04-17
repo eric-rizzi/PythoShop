@@ -54,7 +54,8 @@ def create_artifacts_for_tests(
 
         for original_file_name in original_file_names[1:]:
             original_file_name = original_file_name + ".bmp"
-            original_fp = open(original_file_name, "rb")
+            original_file_path = os.path.join(config.IMAGES_FOLDER_PATH, original_file_name)
+            original_fp = open(original_file_path, "rb")
             original_files.append(original_fp)
 
         testFunction = getattr(image_manip, test_name)
