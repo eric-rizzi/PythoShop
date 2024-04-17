@@ -79,7 +79,12 @@ class TestBase(object):
                 raise unittest.SkipTest(cls.__module__ + ": function " + cls.manip_func_name + "() is not available to test")
         except SyntaxError:
             raise unittest.SkipTest(cls.__module__ + ": ImageManip.py has a syntax error and can't be tested")
-        if len(inspect.getfullargspec(cls.manip_func).args) < len(cls.test_parameters) + cls.num_image_parameters:
+        positional_args = inspect.getfullargspec(cls.manip_func.__wrapped__).args.copy()
+        # starting from the end, remove all the args that are handled by kwargs so we're left with just positional args
+        while positional_args[-1] in cls.test_parameters:
+            positional_args = positional_args[:-1]
+        # what should be left is just the image parameters
+        if len(positional_args) < cls.num_image_parameters:
             raise unittest.SkipTest(cls.__module__ + ": function " + cls.manip_func_name + "() does not take " + str(len(cls.test_parameters) + cls.num_image_parameters) + " parameters.")
         pickled_solutions_file_name = cls.__module__ + ".pickle"
         pickled_solutions = open(pickled_solutions_file_name, "rb")
