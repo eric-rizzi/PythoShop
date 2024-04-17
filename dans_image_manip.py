@@ -102,12 +102,6 @@ def change_pixel(image, clicked_coordinate, **kwargs):
         image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]] * (length)))
 
 
-@export_filter
-def mark_middle(image, **kwargs):
-    fpp, width, height, bpp, row_size, padding = get_info(image)
-    change_pixel(image, (round(width / 2), round(height / 2)), **kwargs)
-
-
 # Lesson: Draw some lines
 
 
@@ -154,18 +148,6 @@ def draw_centered_vline(image, **kwargs):
     draw_vline(image, (round(width / 2), 0), **kwargs)
 
 
-@export_filter
-def draw_sloping_lines(image, **kwargs):
-    fpp, width, height, bpp, row_size, padding = get_info(image)
-    color = bytes(list(reversed(kwargs["color"])))
-    min_dimension = min(width, height)
-    for pixel in range(min_dimension):
-        go_to(image, (pixel, pixel))
-        image.write(color)
-        go_to(image, (width - 1 - pixel, pixel))
-        image.write(color)
-
-
 # @export_tool
 # def draw_x(image, clicked_coordinate, **kwargs):
 #     try:
@@ -195,62 +177,6 @@ def draw_sloping_lines(image, **kwargs):
 #         if 0 < y + pixel < height and 0 < x + pixel < width:
 #             image.seek(fpp + (width * 3 + padding) * (y + pixel) + (x + pixel) * 3)
 #             image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]]))
-
-
-@export_tool
-def draw_x_hline(image, clicked_coordinate, **kwargs):
-    try:
-        radius = int(kwargs["extra"])
-    except:
-        radius = 0
-    fpp, width, height, bpp, row_size, padding = get_info(image)
-    clicked_x, y = clicked_coordinate
-    for x in range(clicked_x, width + radius + 1, radius * 2 + 2):
-        draw_x(image, (x, y), **kwargs)
-    for x in range(clicked_x, -1 * radius, -1 * radius * 2 - 2):
-        draw_x(image, (x, y), **kwargs)
-
-
-@export_tool
-def draw_x_vline(image, clicked_coordinate, **kwargs):
-    try:
-        radius = int(kwargs["extra"])
-    except:
-        radius = 0
-    fpp, width, height, bpp, row_size, padding = get_info(image)
-    x, clicked_y = clicked_coordinate
-    for y in range(clicked_y, height + radius + 1, radius * 2 + 2):
-        draw_x(image, (x, y), **kwargs)
-    for y in range(clicked_y, -1 * radius, -1 * radius * 2 - 2):
-        draw_x(image, (x, y), **kwargs)
-
-
-@export_filter
-def draw_bisecting_diagonals(image, **kwargs):
-    # extra could be a width
-    first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
-    bmp_color = (kwargs["color"][2], kwargs["color"][1], kwargs["color"][0])
-    image.seek(first_pixel)
-    for y in range(height):
-        image.seek(first_pixel + row_size * y)
-        before = 0
-        length = 0
-        for x in range(width):
-            if x / width < y / height:
-                image.seek(3, 1)
-                before += 1
-            else:
-                image.write(bytes(bmp_color))
-                x += 1
-                length += 1
-                while x / width < (y + 1) / height:
-                    image.write(bytes(bmp_color))
-                    x += 1
-                    length += 1
-                break
-        image.seek(3 * (width - 2 * (before + length)), 1)
-        for pixel in range(length):
-            image.write(bytes(bmp_color))
 
 
 # Lesson: Changing parts of a pixel
@@ -810,65 +736,6 @@ def make_better_two_tone(image, **kwargs):
 
 
 @export_filter
-def make_better_four_tone(image, **kwargs):
-    first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
-    r, g, b = kwargs["color"]
-    r_delta = r / 3
-    g_delta = g / 3
-    b_delta = b / 3
-    darker = (0, 0, 0)
-    dark = (int(r_delta), int(g_delta), int(b_delta))
-    medium = (int(r_delta * 2), int(g_delta * 2), int(b_delta * 2))
-    light = kwargs["color"]
-    total_brightness = 0
-    for row in range(height):  # go through every row in the image
-        image.seek(first_pixel + row * row_size)
-        for pixel in range(width):  # go through every pixel in the current row
-            b, g, r = image.read(3)
-            total_brightness += b + g + r
-    avg_brightness = total_brightness / (width * height)
-    for row in range(height):  # go through every row in the image
-        image.seek(first_pixel + row * row_size)
-        for pixel in range(width):  # go through every pixel in the current row
-            b, g, r = image.read(3)
-            brightness = b + g + r
-            image.seek(-3, 1)
-            if brightness < avg_brightness / 2:
-                image.write(bytes([darker[2], darker[1], darker[0]]))
-            elif brightness < avg_brightness:
-                image.write(bytes([dark[2], dark[1], dark[0]]))
-            elif brightness < avg_brightness * 1.5:
-                image.write(bytes([medium[2], medium[1], medium[0]]))
-            else:
-                image.write(bytes([light[2], light[1], light[0]]))
-
-
-# todo: put this in a lesson and add a test
-@export_tool
-def smudge(image, clicked_coordinate, **kwargs):
-    first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
-    clicked_x, clicked_y = clicked_coordinate
-    try:
-        effect_radius = int(kwargs["extra"])
-    except (ValueError, KeyError):
-        effect_radius = 1
-    go_to(image, (clicked_x, clicked_y))
-    sb, sg, sr = image.read(3)
-    for x in range(max(clicked_x - effect_radius, 0), min(clicked_x + effect_radius, width - 1)):
-        for y in range(max(clicked_y - effect_radius, 0), min(clicked_y + effect_radius, height - 1)):
-            d = distance((x, y), (clicked_x, clicked_y))
-            if d <= effect_radius:
-                percent = d / effect_radius
-                smudge_percent = 1 - percent
-                go_to(image, (x, y))
-                b, g, r = image.read(3)
-                image.seek(-3, 1)
-                image.write(
-                    bytes([round(b * percent + sb * smudge_percent), round(g * percent + sg * smudge_percent), round(r * percent + sr * smudge_percent)])
-                )
-
-
-@export_filter
 def blend_other(image, other_image, **kwargs):
     try:
         percentage1 = float(kwargs["extra"])
@@ -919,40 +786,6 @@ def chroma_overlay(image, other_image, **kwargs):
             b1, g1, r1 = background_image.read(3)
             if row >= 0 and row < fg_height and pixel >= 0 and pixel < fg_width:
                 foreground_image.seek(fg_first_pixel + row * fg_row_size + pixel * 3)
-                b2, g2, r2 = foreground_image.read(3)
-                if color_distance((b2, g2, r2), (target_chroma[2], target_chroma[1], target_chroma[0])) < tolerance:
-                    result.write(bytes([b1, g1, r1]))
-                else:
-                    result.write(bytes([b2, g2, r2]))
-            else:
-                result.write(bytes([b1, g1, r1]))
-    result.seek(0)
-    return result
-
-
-@export_tool
-def chroma_overlay_stamp(image, clicked_coordinate, **kwargs):
-    background_image = image
-    foreground_image = kwargs["other_image"]
-    bg_first_pixel, bg_width, bg_height, bg_bpp, bg_row_size, bg_row_padding = get_info(background_image)
-    fg_first_pixel, fg_width, fg_height, fg_bpp, fg_row_size, fg_row_padding = get_info(foreground_image)
-    target_chroma = kwargs["color"]
-    x_offset, y_offset = clicked_coordinate
-    x_offset -= round(fg_width / 2)
-    y_offset -= round(fg_height / 2)
-    try:
-        tolerance = int(kwargs["extra"])
-    except (ValueError, KeyError):
-        tolerance = 100
-    result = create_bmp(bg_width, bg_height)
-    res_first_pixel, res_width, res_height, res_bpp, res_row_size, res_row_padding = get_info(result)
-    for row in range(res_height):  # go through overlapping rows in the images
-        for pixel in range(res_width):  # go through overlapping pixels in the current row
-            result.seek(res_first_pixel + row * res_row_size + pixel * 3)
-            background_image.seek(bg_first_pixel + row * bg_row_size + pixel * 3)
-            b1, g1, r1 = background_image.read(3)
-            if row - y_offset >= 0 and row - y_offset < fg_height and pixel - x_offset >= 0 and pixel - x_offset < fg_width:
-                foreground_image.seek(fg_first_pixel + (row - y_offset) * fg_row_size + (pixel - x_offset) * 3)
                 b2, g2, r2 = foreground_image.read(3)
                 if color_distance((b2, g2, r2), (target_chroma[2], target_chroma[1], target_chroma[0])) < tolerance:
                     result.write(bytes([b1, g1, r1]))
@@ -1105,24 +938,6 @@ def mirror_left_horizontal(image, **kwargs):
             image.write(bytes([b, g, r]))
 
 
-# Alternate implementation
-# @export_filter
-# def mirror_left_horizontal(image, **kwargs):
-#     fpp, w, h, bpp, row_size, row_padding = get_info(image)
-#     for row in range(h):  # go through every row in the image
-#         image.seek(fpp + row_size * row)
-#         half_row = image.read((w//2)*3)
-#         half_row_reversed = list(reversed(half_row))
-#         # reversing flips the order BGR becomes RGB so we have to swap the blues and reds back
-#         for byte in range(0, len(half_row_reversed), 3):
-#             red = half_row_reversed[byte]
-#             half_row_reversed[byte] = half_row_reversed[byte+2]
-#             half_row_reversed[byte+2] = red
-#         if w % 2 != 0:
-#             image.seek(1, 1)
-#         image.write(bytes(half_row_reversed))
-
-
 @export_filter
 def mirror_right_horizontal(image, **kwargs):
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
@@ -1134,9 +949,9 @@ def mirror_right_horizontal(image, **kwargs):
             image.write(bytes([b, g, r]))
 
 
-# doesn't look it in the GUI
-# doesn't handle edge case where the original image is only 1 pixel wide / tall
-# could use extra as a shrink factor
+# TODO: doesn't look it in the GUI
+# TODO: doesn't handle edge case where the original image is only 1 pixel wide / tall
+# TODO: could use extra as a shrink factor
 @export_filter
 def shrink(image, **kwargs):
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
@@ -1324,159 +1139,3 @@ def resize(image, **kwargs):
             new_image.seek(new_first_pixel + row * new_row_size + pixel * 3)
             new_image.write(bytes([b, g, r]))
     return new_image
-
-
-# todo: put this in a lesson and test it
-@export_filter
-def make_better_line_drawing(image, **kwargs):
-    # todo: use extra as the color of the lines
-    first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
-    try:
-        tolerance = int(kwargs["extra"])
-    except:
-        tolerance = 15
-    new_image = create_bmp(width - 1, height)
-    new_first_pixel, new_width, new_height, new_bpp, new_row_size, new_row_padding = get_info(new_image)
-    for row in range(new_height):
-        for pixel in range(new_width):
-            image.seek(first_pixel + row * row_size + pixel * 3)
-            b1, g1, r1, b2, g2, r2 = image.read(6)
-            new_image.seek(new_first_pixel + row * new_row_size + pixel * 3)
-            if abs(b1 - b2) + abs(g1 - g2) + abs(r1 - r2) > tolerance:
-                new_image.write(bytes([0, 0, 0]))
-            else:
-                new_image.write(bytes([255, 255, 255]))
-    return new_image
-
-
-@export_filter
-def make_autostereogram(image, **kwargs):
-    max_shift = 30
-    depth_image = image
-    pattern_image = kwargs["other_image"]
-    depth_first_pixel, depth_width, depth_height, depth_bpp, depth_row_size, depth_row_padding = get_info(depth_image)
-    pattern_first_pixel, pattern_width, pattern_height, pattern_bpp, pattern_row_size, pattern_row_padding = get_info(pattern_image)
-    autostereogram = create_bmp(depth_width + pattern_width, depth_height)
-    as_first_pixel, as_width, as_height, as_bpp, as_row_size, as_row_padding = get_info(autostereogram)
-    if depth_height != pattern_height:
-        raise ValueError("Depth image and pattern must have the same height")
-    for row in range(pattern_height):
-        for pixel in range(pattern_width):
-            autostereogram.seek(as_first_pixel + row * as_row_size + pixel * 3)
-            pattern_image.seek(pattern_first_pixel + row * pattern_row_size + pixel * 3)
-            b, g, r = pattern_image.read(3)
-            autostereogram.write(bytes([b, g, r]))
-    for row in range(depth_height):
-        for pixel in range(depth_width):
-            depth_image.seek(depth_first_pixel + row * depth_row_size + pixel * 3)
-            b, g, r = depth_image.read(3)
-            shift_percent = (b + g + r) / 765
-            autostereogram.seek(as_first_pixel + row * as_row_size + (pixel + round(max_shift * shift_percent)) * 3)
-            b, g, r = autostereogram.read(3)
-            autostereogram.seek(as_first_pixel + row * as_row_size + (pixel + pattern_width) * 3)
-            autostereogram.write(bytes([b, g, r]))
-    return autostereogram
-
-
-@export_filter
-def hide_message_in_padding(image, **kwargs):
-    message = kwargs["extra"]
-    first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
-    if row_padding == 0:
-        raise ValueError("Can't hide a message in an image without padding")
-    new_image = create_bmp(width, height)
-    new_first_pixel, new_width, new_height, new_bpp, new_row_size, new_row_padding = get_info(new_image)
-    for row in range(new_height):
-        for pixel in range(new_width):
-            image.seek(first_pixel + row * row_size + pixel * 3)
-            b, g, r = image.read(3)
-            new_image.seek(new_first_pixel + row * new_row_size + pixel * 3)
-            new_image.write(bytes([b, g, r]))
-        if len(message) != 0:
-            characters = message[:new_row_padding]
-            new_image.write(characters.encode("ascii"))
-            message = message[new_row_padding:]
-        else:
-            new_image.write(bytes([0] * new_row_padding))
-    return new_image
-
-
-@export_filter
-def find_message_in_padding(image, **kwargs):
-    first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
-    if row_padding == 0:
-        return None
-    message = ""
-    for row in range(height):
-        image.seek(first_pixel + (row + 1) * row_size - row_padding)
-        characters = image.read(row_padding).decode("ascii")
-        if ord(characters[0]) != 0:
-            message += characters
-        else:
-            break
-    print("Secret message:", message)
-
-
-@export_filter
-def hide_message_in_lobs(image, **kwargs):
-    message = kwargs["extra"]
-    first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
-    new_image = create_bmp(width, height)
-    new_first_pixel, new_width, new_height, new_bpp, new_row_size, new_row_padding = get_info(new_image)
-    for row in range(new_height):
-        for pixel in range(0, new_width - 2, 3):
-            if len(message) != 0:
-                character = ord(message[:1])
-                # new_image.write(characters.encode('ascii'))
-                message = message[1:]
-            else:
-                character = 0
-            cb1 = 1 & character
-            cb2 = (1 << 1 & character) >> 1
-            cb3 = (1 << 2 & character) >> 2
-            cb4 = (1 << 3 & character) >> 3
-            cb5 = (1 << 4 & character) >> 4
-            cb6 = (1 << 5 & character) >> 5
-            cb7 = (1 << 6 & character) >> 6
-            cb8 = (1 << 7 & character) >> 7
-            cb9 = (1 << 8 & character) >> 8
-            image.seek(first_pixel + row * row_size + pixel * 3)
-            b1, g1, r1, b2, g2, r2, b3, g3, r3 = image.read(9)
-            r3 = r3 & ~1 | cb1
-            g3 = g3 & ~1 | cb2
-            b3 = b3 & ~1 | cb3
-            r2 = r2 & ~1 | cb4
-            g2 = g2 & ~1 | cb5
-            b2 = b2 & ~1 | cb6
-            r1 = r1 & ~1 | cb7
-            g1 = g1 & ~1 | cb8
-            b1 = b1 & ~1 | cb9
-            new_image.seek(new_first_pixel + row * new_row_size + pixel * 3)
-            new_image.write(bytes([b1, g1, r1, b2, g2, r2, b3, g3, r3]))
-    return new_image
-
-
-@export_filter
-def find_message_in_lobs(image, **kwargs):
-    first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
-    message = ""
-    for row in range(height):
-        for pixel in range(0, width - 2, 3):
-            image.seek(first_pixel + row * row_size + pixel * 3)
-            b1, g1, r1, b2, g2, r2, b3, g3, r3 = image.read(9)
-            cb1 = 1 & r3
-            cb2 = (1 & g3) << 1
-            cb3 = (1 & b3) << 2
-            cb4 = (1 & r2) << 3
-            cb5 = (1 & g2) << 4
-            cb6 = (1 & b2) << 5
-            cb7 = (1 & r1) << 6
-            cb8 = (1 & g1) << 7
-            cb9 = (1 & b1) << 8
-            character = cb9 | cb8 | cb7 | cb6 | cb5 | cb4 | cb3 | cb2 | cb1
-            if character != 0:
-                message += chr(character)
-            else:
-                print("Secret message:", message)
-                return
-    print("Secret message:", message)
