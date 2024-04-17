@@ -7,6 +7,13 @@ def change_pixel(image, clicked_coordinate, **kwargs):
 
 
 @export_filter
+def mark_middle(image, **kwargs):
+    middle_y = round(get_height(image) / 2)
+    middle_x = round(get_width(image) / 2)
+    set_pixel_rgb(image, (middle_x, middle_y), kwargs["color"])
+
+
+@export_filter
 def draw_hline(image, **kwargs) -> None:
     width = get_width(image)
     x, y = kwargs["clicked_coordinate"]

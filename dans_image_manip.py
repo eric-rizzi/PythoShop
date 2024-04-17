@@ -71,14 +71,6 @@ def get_info(image):
 
 # Lesson: change a pixel
 
-# @export_tool
-# def change_pixel(image, clicked_coordinate, color, **kwargs):
-#     """The simple implmentation"""
-#     fpp, width, height, bpp, row_size, padding = get_info(image)
-#     x, y = clicked_coordinate
-#     image.seek(fpp + row_size * y + x * 3)
-#     image.write(bytes([color[2], color[1], color[0]]))
-
 
 @export_tool
 def change_pixel(image, clicked_coordinate, **kwargs):
@@ -100,6 +92,13 @@ def change_pixel(image, clicked_coordinate, **kwargs):
     for row in range(max(y - radius, 0), y + radius + 1):
         image.seek(fpp + (width * 3 + padding) * row + start_x * 3)
         image.write(bytes([kwargs["color"][2], kwargs["color"][1], kwargs["color"][0]] * (length)))
+
+
+@export_filter
+def mark_middle(image, **kwargs):
+    fpp, width, height, bpp, row_size, padding = get_info(image)
+    kwargs.pop("clicked_coordinate")
+    change_pixel(image, (round(width / 2), round(height / 2)), **kwargs)
 
 
 # Lesson: Draw some lines
