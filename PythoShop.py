@@ -4,16 +4,12 @@ from kivy.uix.image import Image as UixImage
 from kivy.uix.button import Button
 from kivy.uix.widget import Widget
 from kivy.uix.dropdown import DropDown
-from kivy.uix.filechooser import FileChooserIconView
 from kivy.uix.popup import Popup
-from kivy.graphics import Color
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 from io import BytesIO
 from ImageManip import *
 import os
-from random import random
 import importlib.util
-import inspect
 import time
 from kivy.uix.colorpicker import ColorPicker
 from kivy.core.window import Window
