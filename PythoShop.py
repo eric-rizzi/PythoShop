@@ -194,21 +194,21 @@ class PhotoShopWidget(Widget):
             new_image_file.write(bytes.read())
             new_image_file.close()
 
-    def apply_tool(self, touch, callback):
+    def apply_tool(self, event, callback):
         cimage, cbytes, cscatter = get_current_image()
         if cimage and PythoShopApp._tool_function:
-            if not cimage.parent.collide_point(*touch.pos):
-                return callback(touch)
+            if not cimage.parent.collide_point(*event.pos):
+                return callback(event)
             else:
                 lr_space = (cimage.width - cimage.norm_image_size[0]) / 2  # empty space in Image widget left and right of actual image
                 tb_space = (cimage.height - cimage.norm_image_size[1]) / 2  # empty space in Image widget above and below actual image
-                pixel_x = touch.x - lr_space - cscatter.x  # x coordinate of touch measured from lower left of actual image
-                pixel_y = touch.y - tb_space - cscatter.y  # y coordinate of touch measured from lower left of actual image
+                pixel_x = event.x - lr_space - cscatter.x  # x coordinate of touch measured from lower left of actual image
+                pixel_y = event.y - tb_space - cscatter.y  # y coordinate of touch measured from lower left of actual image
                 if pixel_x < 0 or pixel_y < 0:
-                    return callback(touch)
+                    return callback(event)
                 elif pixel_x >= cimage.norm_image_size[0] or \
                         pixel_y >= cimage.norm_image_size[1]:
-                    return callback(touch)
+                    return callback(event)
                 else:
                     # scale coordinates to actual pixels of the Image source
                     actual_x = int(pixel_x * cimage.texture_size[0] / cimage.norm_image_size[0])
@@ -220,13 +220,13 @@ class PhotoShopWidget(Widget):
                         run_manip_function(PythoShopApp._tool_function, clicked_coordinate=(actual_x, actual_y))
                     return True
         else:
-            return callback(touch)
+            return callback(event)
 
     def on_touch_down(self, touch):
         self.apply_tool(touch, super().on_touch_down)
 
-    def on_touch_move(self, touch):
-        self.apply_tool(touch, super().on_touch_move)
+    def on_touch_move(self, movement):
+        self.apply_tool(movement, super().on_touch_move)
 
 class PythoShopApp(App):
     _image1 = None
