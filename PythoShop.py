@@ -220,7 +220,7 @@ class PhotoShopWidget(Widget):
                         run_manip_function(PythoShopApp._tool_function, clicked_coordinate=(actual_x, actual_y))
                     return True
         else:
-            return super().on_touch_down(touch)
+            return callback(touch)
 
     def on_touch_down(self, touch):
         self.apply_tool(touch, super().on_touch_down)
