@@ -66,6 +66,7 @@ def create_bmp(width: int, height: int) -> io.BytesIO:
     return bmp
 
 
+@functools.lru_cache
 def _get_fpp(image) -> int:
     """
     Helper function to get the point in a bitmap file where the image "starts"
@@ -77,6 +78,7 @@ def _get_fpp(image) -> int:
     return int.from_bytes(image.read(4), byteorder="little")
 
 
+@functools.lru_cache
 def get_height(image) -> int:
     """
     Helper function to get the height of a particular bitmap
@@ -88,6 +90,7 @@ def get_height(image) -> int:
     return int.from_bytes(image.read(4), byteorder="little")
 
 
+@functools.lru_cache
 def get_width(image) -> int:
     """
     Helper function to get the width of a particular bitmap
@@ -99,6 +102,7 @@ def get_width(image) -> int:
     return int.from_bytes(image.read(4), byteorder="little")
 
 
+@functools.lru_cache(maxsize=None)
 def _get_padding(image) -> int:
     width = get_width(image)
     row_size = width * 3
