@@ -45,6 +45,30 @@
             }
         },
         {
+            "name": "Test All",
+            "type": "python",
+            "request": "launch",
+            "module": "gradeAll",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/tests",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/admin:${workspaceFolder}/tests"
+            }
+        },
+        {
+            "name": "Test One",
+            "type": "python",
+            "request": "launch",
+            "module": "gradeOne",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/tests",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/admin:${workspaceFolder}/tests"
+            }
+        },
+        {
             "name": "Gen solution",
             "type": "python",
             "request": "launch",

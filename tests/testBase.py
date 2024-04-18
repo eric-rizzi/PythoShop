@@ -68,7 +68,7 @@ class TestBase(object):
         pickled_originals.close()
         try:
             if "IMAGE_MANIP" in os.environ:
-                spec = importlib.util.spec_from_file_location("ImageManip", os.environ["IMAGE_MANIP"] + "/ImageManip.py")
+                spec = importlib.util.spec_from_file_location("ImageManip", os.environ["IMAGE_MANIP"] + "/PythoShop/ImageManip.py")
             else:
                 spec = importlib.util.spec_from_file_location("ImageManip", os.getcwd() + "/../ImageManip.py")
             cls.manip_module = importlib.util.module_from_spec(spec)
