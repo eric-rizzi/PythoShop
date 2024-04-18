@@ -1,6 +1,7 @@
 import importlib.util
 import os
 import time
+import typing
 from io import BytesIO
 
 from kivy.app import App
@@ -24,22 +25,22 @@ class NoImageError(Exception):
     pass
 
 
-def _set_extra(value):
+def _set_extra(value) -> None:
     PythoShopApp._root.extra_input.text = value
 
 
-def _select_coordinate(x, y):
+def _select_coordinate(x: int, y: int) -> None:
     _set_extra(f"{x}, {y}")
 
 
-def get_current_image():
+def get_current_image() -> tuple:
     if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
         return PythoShopApp._image1, PythoShopApp._bytes1, PythoShopApp._root.image1
     else:
         return PythoShopApp._image2, PythoShopApp._bytes2, PythoShopApp._root.image2
 
 
-def _select_color(x: int, y: int):  # sourcery skip: merge-else-if-into-elif
+def _select_color(x: int, y: int) -> None:  # sourcery skip: merge-else-if-into-elif
     cimage, cbytes, cscatter = get_current_image()
     if cbytes:
         img = Image.open(cbytes)
@@ -62,7 +63,7 @@ def get_image_bytes(file_name: str) -> BytesIO:
     return current_bytes
 
 
-def run_manip_function(func, **kwargs):
+def run_manip_function(func, **kwargs) -> None:
     if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
         cimage = PythoShopApp._image1
         bytes1 = PythoShopApp._bytes1
@@ -117,12 +118,12 @@ def run_manip_function(func, **kwargs):
 
 
 class FileChooserDialog(Widget):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__()
         if "rootpath" in kwargs:
             self.file_chooser.rootpath = kwargs["rootpath"]
 
-    def open(self, file_name: list[str]):
+    def open(self, file_name: list[str]) -> None:
         if not file_name:
             # Early exit if no file selected
             return
@@ -169,7 +170,7 @@ class FileChooserDialog(Widget):
 class PhotoShopWidget(Widget):
     _file_chooser_popup = None
 
-    def toggle_color(self):
+    def toggle_color(self) -> None:
         if PythoShopApp._color_picker.is_visible:
             PythoShopApp._root.children[0].remove_widget(PythoShopApp._color_picker)
             PythoShopApp._color_picker.is_visible = False
@@ -179,12 +180,12 @@ class PhotoShopWidget(Widget):
             PythoShopApp._color_picker.is_visible = True
             PythoShopApp._root.color_button.text = "Set Color"
 
-    def load_image(self):
+    def load_image(self) -> None:
         if not PhotoShopWidget._file_chooser_popup:
             PhotoShopWidget._file_chooser_popup = Popup(title="Choose an image", content=FileChooserDialog(rootpath=os.path.expanduser("~")))
         PhotoShopWidget._file_chooser_popup.open()
 
-    def save_image(self):
+    def save_image(self) -> None:
         bytes = None
         if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab and PythoShopApp._image1:
             bytes = PythoShopApp._bytes1
@@ -197,7 +198,7 @@ class PhotoShopWidget(Widget):
             new_image_file.write(bytes.read())
             new_image_file.close()
 
-    def apply_tool(self, touch, callback):
+    def apply_tool(self, touch, callback) -> typing.Optional[bool]:
         cimage, cbytes, cscatter = get_current_image()
         if cimage and PythoShopApp._tool_function:
             if not cimage.parent.collide_point(*touch.pos):
