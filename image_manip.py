@@ -2,7 +2,7 @@ from pythoshop_exports import create_bmp, export_filter, export_tool, get_height
 
 
 @export_tool
-def change_pixel(image, color, clicked_coordinate, **kwargs):
+def change_pixel(image, clicked_coordinate, color, **kwargs):
     set_pixel_rgb(image, clicked_coordinate, color)
 
 
