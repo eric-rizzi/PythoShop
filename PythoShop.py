@@ -17,6 +17,7 @@ import inspect
 import time
 from kivy.uix.colorpicker import ColorPicker
 from kivy.core.window import Window
+from tests.config import DEFAULT_STARTING_IMAGE_PATH
 
 
 class NoImageError(Exception):
@@ -43,6 +44,21 @@ def _select_color(x, y):  # sourcery skip: merge-else-if-into-elif
         img = Image.open(cbytes)
         r, g, b = img.getpixel((x, img.height - 1 - y))
         PythoShopApp._color_picker.color = (r/255, g/255, b/255, 1)
+
+
+def _get_image_bytes(file_name: str) -> BytesIO:
+    if os.path.splitext(file_name)[-1].lower() == ".bmp":
+        # Load it directly rather than going through Pillow where we might loose some fidelity (e.g. paddding bytes)
+        current_bytes = BytesIO()
+        current_bytes.write(open(file_name, "rb").read())
+    else:
+        current_bytes = BytesIO()
+        img = Image.open(file_name)
+        img = img.convert("RGB")
+        img.save(current_bytes, format="bmp")
+        img.close()
+
+    return current_bytes
 
 
 def run_manip_function(func, **kwargs):
@@ -123,43 +139,28 @@ class FileChooserDialog(Widget):
 
         PhotoShopWidget._file_chooser_popup.dismiss()
 
-        if os.path.splitext(file_name[0])[-1].lower() == ".bmp":
-            # Load it directly rather than going through Pillow where we might loose some fidelity (e.g. paddding bytes)
-            current_bytes = BytesIO()
-            current_bytes.write(open(file_name[0], "rb").read())
-        else:
-            current_bytes = BytesIO()
-            img = Image.open(file_name[0])
-            img = img.convert('RGB')
-            img.save(current_bytes, format='bmp')
-            img.close()
-        if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
-            PythoShopApp._bytes1 = current_bytes
-        elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
-            PythoShopApp._bytes2 = current_bytes
-        else:
-            raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
-
+        current_bytes = _get_image_bytes(file_name[0])
         current_bytes.seek(0)
-        cimg = CoreImage(BytesIO(current_bytes.read()), ext='bmp')
+        cimg = CoreImage(current_bytes, ext="bmp")
 
         uix_image = UixImage(fit_mode="contain")
         if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+            PythoShopApp._bytes1 = current_bytes
             PythoShopApp._image1 = uix_image
         elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
+            PythoShopApp._bytes2 = current_bytes
             PythoShopApp._image2 = uix_image
         else:
             raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
 
         uix_image.texture = cimg.texture
         # to avoid anti-aliassing when we zoom in
-        uix_image.texture.mag_filter = 'nearest'
-        uix_image.texture.min_filter = 'nearest'
+        uix_image.texture.mag_filter = "nearest"
+        uix_image.texture.min_filter = "nearest"
         uix_image.size_hint = [None, None]
         uix_image.size = scatter.size
         uix_image.pos = (0, 0)
         scatter.add_widget(uix_image, 100)
-
 
 class PhotoShopWidget(Widget):
     _file_chooser_popup = None
@@ -313,6 +314,25 @@ class PythoShopApp(App):
             PythoShopApp._tool_dropdown.bind(on_select=select_tool)
         except SyntaxError:
             print("Error: ImageManip.py has a syntax error and can't be executed")
+
+        if os.path.exists(DEFAULT_STARTING_IMAGE_PATH):
+            current_bytes = _get_image_bytes(DEFAULT_STARTING_IMAGE_PATH)
+            current_bytes.seek(0)
+            cimg = CoreImage(current_bytes, ext="bmp")
+
+            # Create a Kivy Image widget for the loaded image
+            uix_image = UixImage(fit_mode="contain")
+            PythoShopApp._bytes1 = current_bytes
+            PythoShopApp._image1 = uix_image
+
+            uix_image.texture = cimg.texture
+            # to avoid anti-aliassing when we zoom in
+            uix_image.texture.mag_filter = "nearest"
+            uix_image.texture.min_filter = "nearest"
+            uix_image.size_hint = [None, None]
+            uix_image.size = (640, 480)
+            uix_image.pos = (0, 0)
+            PythoShopApp._root.image1.add_widget(uix_image, 100)
 
         return PythoShopApp._root
 

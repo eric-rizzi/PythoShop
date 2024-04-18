@@ -1,3 +1,5 @@
+DEFAULT_STARTING_IMAGE_PATH = "images/uchicago.bmp"
+
 file_names = [
     "even",
     "square",
