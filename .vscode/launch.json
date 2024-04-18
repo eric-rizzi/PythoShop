@@ -13,7 +13,7 @@
         },
         {
             "name": "Install prereqs",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "pip",
             "args": [
@@ -26,7 +26,7 @@
         },
         {
             "name": "PythoShop",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "PythoShop.py",
             "console": "integratedTerminal",
@@ -34,7 +34,7 @@
         },
         {
             "name": "Tests",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "testRunner",
             "console": "integratedTerminal",
@@ -45,20 +45,8 @@
             }
         },
         {
-            "name": "Test All",
-            "type": "python",
-            "request": "launch",
-            "module": "gradeAll",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "cwd": "${workspaceFolder}/tests",
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/admin:${workspaceFolder}/tests"
-            }
-        },
-        {
             "name": "Test One",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "gradeOne",
             "console": "integratedTerminal",
@@ -69,8 +57,24 @@
             }
         },
         {
+            "name": "Test All",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "gradeAll",
+            "args": [
+                ">",
+                "testResults.tsv",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/tests",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/admin:${workspaceFolder}/tests"
+            }
+        },
+        {
             "name": "Gen solution",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "pickleImages",
             "console": "integratedTerminal",

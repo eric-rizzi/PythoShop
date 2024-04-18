@@ -7,3 +7,5 @@ __pycache__
 ImageManip*.py
 admin*/
 *.zip
+*.tsv
+*.csv
