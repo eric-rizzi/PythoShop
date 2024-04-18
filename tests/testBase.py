@@ -2,7 +2,7 @@ import unittest
 import pickle
 import tempfile
 import inspect
-import testFiles
+import tests.config as config
 import os
 import importlib.util
 import random
@@ -52,7 +52,7 @@ class TestBase(object):
         super().__init__(test)
         self.__class__.test_parameters = self.__class__.test_parameters.copy()
         if self.image_sets is None:
-            self.image_sets = list([file_name] for file_name in testFiles.file_names)
+            self.image_sets = list([file_name] for file_name in config.file_names)
 
     @classmethod
     def get_parameter_str(cls):
