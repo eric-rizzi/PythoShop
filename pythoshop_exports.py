@@ -67,7 +67,7 @@ def create_bmp(width: int, height: int) -> io.BytesIO:
 
 
 @functools.lru_cache
-def _get_fpp(image) -> int:
+def _get_fpp(image: io.BytesIO) -> int:
     """
     Helper function to get the point in a bitmap file where the image "starts"
 
@@ -79,7 +79,7 @@ def _get_fpp(image) -> int:
 
 
 @functools.lru_cache
-def get_height(image) -> int:
+def get_height(image: io.BytesIO) -> int:
     """
     Helper function to get the height of a particular bitmap
 
@@ -91,7 +91,7 @@ def get_height(image) -> int:
 
 
 @functools.lru_cache
-def get_width(image) -> int:
+def get_width(image: io.BytesIO) -> int:
     """
     Helper function to get the width of a particular bitmap
 
@@ -102,8 +102,8 @@ def get_width(image) -> int:
     return int.from_bytes(image.read(4), byteorder="little")
 
 
-@functools.lru_cache(maxsize=None)
-def _get_padding(image) -> int:
+@functools.lru_cache
+def _get_padding(image: io.BytesIO) -> int:
     width = get_width(image)
     row_size = width * 3
     if row_size % 4 != 0:
@@ -112,7 +112,7 @@ def _get_padding(image) -> int:
         return 0
 
 
-def _seek_x_y(image, x_y_tuple: tuple[int, int]) -> None:
+def _seek_x_y(image: io.BytesIO, x_y_tuple: tuple[int, int]) -> None:
     """
     Helper function to seek to start of the pixel at a given (x, y) coordinate
 
@@ -126,7 +126,7 @@ def _seek_x_y(image, x_y_tuple: tuple[int, int]) -> None:
     image.seek(fpp + ((width * 3 + padding) * x_y_tuple[1]) + (x_y_tuple[0] * 3))
 
 
-def get_pixel_rgb(image, x_y_tuple: tuple[int, int]) -> tuple[int, int, int]:
+def get_pixel_rgb(image: io.BytesIO, x_y_tuple: tuple[int, int]) -> tuple[int, int, int]:
     """
     Helper function to get the RGB value of a particular pixel
 
@@ -141,7 +141,7 @@ def get_pixel_rgb(image, x_y_tuple: tuple[int, int]) -> tuple[int, int, int]:
     return r, g, b
 
 
-def set_pixel_rgb(image, x_y_tuple: tuple[int, int], r_g_b_tuple: tuple[int, int, int]) -> None:
+def set_pixel_rgb(image: io.BytesIO, x_y_tuple: tuple[int, int], r_g_b_tuple: tuple[int, int, int]) -> None:
     """
     Helper function to set the RGB value of a particular pixel
 
