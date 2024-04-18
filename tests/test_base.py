@@ -41,6 +41,7 @@ class TestBase:
     solution_images: dict[str, bytes] = {}
     test_parameters = {
         "color": (238, 0, 119),
+        "extra": "extra parameters...",
     }
     manip_func_name: typing.Optional[str] = None
     manip_func: typing.Optional[str] = None

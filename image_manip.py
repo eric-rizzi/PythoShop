@@ -2,8 +2,8 @@ from pythoshop_exports import create_bmp, export_filter, export_tool, get_height
 
 
 @export_tool
-def change_pixel(image, clicked_coordinate, **kwargs):
-    set_pixel_rgb(image, clicked_coordinate, kwargs["color"])
+def change_pixel(image, color, clicked_coordinate, **kwargs):
+    set_pixel_rgb(image, clicked_coordinate, color)
 
 
 @export_filter
@@ -14,7 +14,7 @@ def mark_middle(image, **kwargs):
 
 
 @export_tool
-def draw_hline(image, clicked_coordinate, **kwargs) -> None:
+def draw_hline(image, clicked_coordinate, color, **kwargs) -> None:
     width = get_width(image)
     x, y = clicked_coordinate
 
@@ -26,23 +26,23 @@ def draw_hline(image, clicked_coordinate, **kwargs) -> None:
     start_row = y - round(thickness / 2)
     for alt_y in range(thickness):
         for x in range(width):
-            set_pixel_rgb(image, (x, start_row + alt_y), kwargs["color"])
+            set_pixel_rgb(image, (x, start_row + alt_y), color)
 
 
 @export_tool
-def draw_vline(image, clicked_coordinate, **kwargs) -> None:
+def draw_vline(image, clicked_coordinate, color, extra, **kwargs) -> None:
     height = get_height(image)
     x, y = clicked_coordinate
 
     try:
-        thickness = int(kwargs["extra"])
+        thickness = int(extra)
     except:
         thickness = 1
 
     start_column = x - round(thickness / 2)
     for alt_x in range(thickness):
         for y in range(height):
-            set_pixel_rgb(image, (start_column + alt_x, y), kwargs["color"])
+            set_pixel_rgb(image, (start_column + alt_x, y), color)
 
 
 @export_filter
