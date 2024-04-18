@@ -7,7 +7,6 @@ from io import BytesIO
 from kivy.app import App
 from kivy.core.image import Image as CoreImage
 from kivy.core.window import Window
-from kivy.lang import Builder
 from kivy.uix.button import Button
 from kivy.uix.colorpicker import ColorPicker
 from kivy.uix.dropdown import DropDown
@@ -17,7 +16,6 @@ from kivy.uix.widget import Widget
 from PIL import Image
 
 from image_manip import *
-from pythoshop_exports import get_height, get_width
 from tests.config import DEFAULT_STARTING_IMAGE_PATH
 
 
@@ -336,9 +334,9 @@ class PythoShopApp(App):
             uix_image.texture.mag_filter = "nearest"
             uix_image.texture.min_filter = "nearest"
             uix_image.size_hint = [None, None]
-            uix_image.size = (get_width(current_bytes), get_height(current_bytes))
+            uix_image.size = (640, 480)
             uix_image.pos = (0, 0)
-            PythoShopApp._root.image1.add_widget(self._image1, 100)
+            PythoShopApp._root.image1.add_widget(uix_image, 100)
 
         return PythoShopApp._root
 
