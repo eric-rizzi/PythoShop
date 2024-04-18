@@ -106,6 +106,8 @@ class FileChooserDialog(Widget):
             self.file_chooser.rootpath = kwargs['rootpath']
 
     def open(self, file_name):
+        if len(file_name) == 0 or len(file_name) > 1:
+            return
         if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
             image = PythoShopApp._image1
             scatter = PythoShopApp._root.image1
