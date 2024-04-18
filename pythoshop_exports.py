@@ -52,15 +52,15 @@ def create_bmp(width: int, height: int) -> io.BytesIO:
     if row_size % 4 != 0:
         row_padding = 4 - row_size % 4
         row_size += row_padding
-    bmp = io.BytesIO(b"\x42\x4D" + (138 + row_size * height).to_bytes(4, byteorder="little"))
+    bmp = io.BytesIO(b"\x42\x4D" + (138 + row_size * height).to_bytes(length=4, byteorder="little"))
     bmp.seek(10)
-    bmp.write((138).to_bytes(4, byteorder="little"))  # starting pixel
-    bmp.write((124).to_bytes(4, byteorder="little"))  # header size (for version 5)
-    bmp.write(width.to_bytes(4, byteorder="little"))
-    bmp.write(height.to_bytes(4, byteorder="little"))
-    bmp.write((1).to_bytes(2, byteorder="little"))  # color planes must be 1
-    bmp.write((24).to_bytes(2, byteorder="little"))  # bits per pixel
-    bmp.write((0).to_bytes(4, byteorder="little"))  # compression (none)
+    bmp.write((138).to_bytes(length=4, byteorder="little"))  # starting pixel
+    bmp.write((124).to_bytes(length=4, byteorder="little"))  # header size (for version 5)
+    bmp.write(width.to_bytes(length=4, byteorder="little"))
+    bmp.write(height.to_bytes(length=4, byteorder="little"))
+    bmp.write((1).to_bytes(length=2, byteorder="little"))  # color planes must be 1
+    bmp.write((24).to_bytes(length=2, byteorder="little"))  # bits per pixel
+    bmp.write((0).to_bytes(length=4, byteorder="little"))  # compression (none)
     bmp.seek(138)
     bmp.write(bytes(([0, 0, 0]) * width + [0] * row_padding) * height)
     return bmp
@@ -135,9 +135,9 @@ def get_pixel_rgb(image, x_y_tuple: tuple[int, int]) -> tuple[int, int, int]:
     :returns: (r, g, b) tuple
     """
     _seek_x_y(image, x_y_tuple)
-    b = int.from_bytes(image.read(1))
-    g = int.from_bytes(image.read(1))
-    r = int.from_bytes(image.read(1))
+    b = int.from_bytes(image.read(1), byteorder="little")
+    g = int.from_bytes(image.read(1), byteorder="little")
+    r = int.from_bytes(image.read(1), byteorder="little")
     return r, g, b
 
 
@@ -151,6 +151,6 @@ def set_pixel_rgb(image, x_y_tuple: tuple[int, int], r_g_b_tuple: tuple[int, int
     :returns: None
     """
     _seek_x_y(image, x_y_tuple)
-    image.write(int.to_bytes(r_g_b_tuple[2]))
-    image.write(int.to_bytes(r_g_b_tuple[1]))
-    image.write(int.to_bytes(r_g_b_tuple[0]))
+    image.write(r_g_b_tuple[2].to_bytes(length=1, byteorder="little"))
+    image.write(r_g_b_tuple[1].to_bytes(length=1, byteorder="little"))
+    image.write(r_g_b_tuple[0].to_bytes(length=1, byteorder="little"))
