@@ -123,6 +123,10 @@ class FileChooserDialog(Widget):
             self.file_chooser.rootpath = kwargs["rootpath"]
 
     def open(self, file_name: list[str]):
+        if not file_name:
+            # Early exit if no file selected
+            return
+
         if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
             image = PythoShopApp._image1
             scatter = PythoShopApp._root.image1
