@@ -13,10 +13,10 @@ def mark_middle(image, **kwargs):
     set_pixel_rgb(image, (middle_x, middle_y), kwargs["color"])
 
 
-@export_filter
-def draw_hline(image, **kwargs) -> None:
+@export_tool
+def draw_hline(image, clicked_coordinate, **kwargs) -> None:
     width = get_width(image)
-    x, y = kwargs["clicked_coordinate"]
+    x, y = clicked_coordinate
 
     try:
         thickness = int(kwargs["extra"])
@@ -29,10 +29,10 @@ def draw_hline(image, **kwargs) -> None:
             set_pixel_rgb(image, (x, start_row + alt_y), kwargs["color"])
 
 
-@export_filter
-def draw_vline(image, **kwargs) -> None:
+@export_tool
+def draw_vline(image, clicked_coordinate, **kwargs) -> None:
     height = get_height(image)
-    x, y = kwargs["clicked_coordinate"]
+    x, y = clicked_coordinate
 
     try:
         thickness = int(kwargs["extra"])
