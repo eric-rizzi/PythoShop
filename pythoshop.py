@@ -46,7 +46,7 @@ def _select_color(x: int, y: int) -> None:  # sourcery skip: merge-else-if-into-
         PythoShopApp._color_picker.color = (r / 255, g / 255, b / 255, 1)
 
 
-def get_image_bytes(file_name: str) -> BytesIO:
+def _get_image_bytes(file_name: str) -> BytesIO:
     if os.path.splitext(file_name)[-1].lower() == ".bmp":
         # Load it directly rather than going through Pillow where we might loose some fidelity (e.g. paddding bytes)
         current_bytes = BytesIO()
@@ -141,7 +141,7 @@ class FileChooserDialog(Widget):
 
         PhotoShopWidget._file_chooser_popup.dismiss()
 
-        current_bytes = get_image_bytes(file_name[0])
+        current_bytes = _get_image_bytes(file_name[0])
         current_bytes.seek(0)
         cimg = CoreImage(current_bytes, ext="bmp")
 
@@ -320,7 +320,7 @@ class PythoShopApp(App):
             print("Error: image_manip.py has a syntax error and can't be executed")
 
         if os.path.exists(DEFAULT_STARTING_IMAGE_PATH):
-            current_bytes = get_image_bytes(DEFAULT_STARTING_IMAGE_PATH)
+            current_bytes = _get_image_bytes(DEFAULT_STARTING_IMAGE_PATH)
             current_bytes.seek(0)
             cimg = CoreImage(current_bytes, ext="bmp")
 
