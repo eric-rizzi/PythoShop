@@ -16,6 +16,8 @@ from kivy.uix.widget import Widget
 from PIL import Image
 
 from image_manip import *
+from pythoshop_exports import get_height, get_width
+from tests.config import DEFAULT_STARTING_IMAGE_PATH
 
 
 class NoImageError(Exception):
@@ -37,12 +39,27 @@ def get_current_image():
         return PythoShopApp._image2, PythoShopApp._bytes2, PythoShopApp._root.image2
 
 
-def _select_color(x, y):  # sourcery skip: merge-else-if-into-elif
+def _select_color(x: int, y: int):  # sourcery skip: merge-else-if-into-elif
     cimage, cbytes, cscatter = get_current_image()
     if cbytes:
         img = Image.open(cbytes)
         r, g, b = img.getpixel((x, img.height - 1 - y))
         PythoShopApp._color_picker.color = (r / 255, g / 255, b / 255, 1)
+
+
+def get_image_bytes(file_name: str) -> BytesIO:
+    if os.path.splitext(file_name)[-1].lower() == ".bmp":
+        # Load it directly rather than going through Pillow where we might loose some fidelity (e.g. paddding bytes)
+        current_bytes = BytesIO()
+        current_bytes.write(open(file_name, "rb").read())
+    else:
+        current_bytes = BytesIO()
+        img = Image.open(file_name)
+        img = img.convert("RGB")
+        img.save(current_bytes, format="bmp")
+        img.close()
+
+    return current_bytes
 
 
 def run_manip_function(func, **kwargs):
@@ -105,7 +122,7 @@ class FileChooserDialog(Widget):
         if "rootpath" in kwargs:
             self.file_chooser.rootpath = kwargs["rootpath"]
 
-    def open(self, file_name):
+    def open(self, file_name: list[str]):
         if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
             image = PythoShopApp._image1
             scatter = PythoShopApp._root.image1
@@ -121,30 +138,16 @@ class FileChooserDialog(Widget):
 
         PhotoShopWidget._file_chooser_popup.dismiss()
 
-        if os.path.splitext(file_name[0])[-1].lower() == ".bmp":
-            # Load it directly rather than going through Pillow where we might loose some fidelity (e.g. paddding bytes)
-            current_bytes = BytesIO()
-            current_bytes.write(open(file_name[0], "rb").read())
-        else:
-            current_bytes = BytesIO()
-            img = Image.open(file_name[0])
-            img = img.convert("RGB")
-            img.save(current_bytes, format="bmp")
-            img.close()
-        if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
-            PythoShopApp._bytes1 = current_bytes
-        elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
-            PythoShopApp._bytes2 = current_bytes
-        else:
-            raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
-
+        current_bytes = get_image_bytes(file_name[0])
         current_bytes.seek(0)
-        cimg = CoreImage(BytesIO(current_bytes.read()), ext="bmp")
+        cimg = CoreImage(current_bytes, ext="bmp")
 
         uix_image = UixImage(fit_mode="contain")
         if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+            PythoShopApp._bytes1 = current_bytes
             PythoShopApp._image1 = uix_image
         elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
+            PythoShopApp._bytes2 = current_bytes
             PythoShopApp._image2 = uix_image
         else:
             raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
@@ -312,6 +315,25 @@ class PythoShopApp(App):
             PythoShopApp._tool_dropdown.bind(on_select=select_tool)
         except SyntaxError:
             print("Error: image_manip.py has a syntax error and can't be executed")
+
+        if os.path.exists(DEFAULT_STARTING_IMAGE_PATH):
+            current_bytes = get_image_bytes(DEFAULT_STARTING_IMAGE_PATH)
+            current_bytes.seek(0)
+            cimg = CoreImage(current_bytes, ext="bmp")
+
+            # Create a Kivy Image widget for the loaded image
+            uix_image = UixImage(fit_mode="contain")
+            PythoShopApp._bytes1 = current_bytes
+            PythoShopApp._image1 = uix_image
+
+            uix_image.texture = cimg.texture
+            # to avoid anti-aliassing when we zoom in
+            uix_image.texture.mag_filter = "nearest"
+            uix_image.texture.min_filter = "nearest"
+            uix_image.size_hint = [None, None]
+            uix_image.size = (get_width(current_bytes), get_height(current_bytes))
+            uix_image.pos = (0, 0)
+            PythoShopApp._root.image1.add_widget(self._image1, 100)
 
         return PythoShopApp._root
 

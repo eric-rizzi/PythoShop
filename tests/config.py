@@ -1,6 +1,7 @@
 IMAGES_FOLDER_PATH = "images"
 EXPECTED_OUTPUT_IMAGE_FOLDER = "images/expected_outputs"
 TEST_ORIGINALS_PICKLE_FILE_NAME = "images/test_originals.pickle"
+DEFAULT_STARTING_IMAGE_PATH = "images/bear.bmp"
 
 FILE_NAMES = [
     "even",  # 64 x 48
