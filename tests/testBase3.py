@@ -3,7 +3,7 @@ import tempfile
 import random
 import signal
 import platform
-import testFiles
+import tests.config as config
 import io
 
 
@@ -45,7 +45,7 @@ class TestBase3(testBase.TestBase):
     def test_images(self):
         with test_timeout(10):
             if self.image_sets is None:
-                self.image_sets = list([file_name] for file_name in testFiles.file_names)
+                self.image_sets = list([file_name] for file_name in config.FILE_NAMES)
             for image_set in self.image_sets:
                 image = image_set[0]
                 with self.subTest(i=image):

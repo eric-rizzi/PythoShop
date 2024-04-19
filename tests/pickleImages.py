@@ -1,14 +1,14 @@
 import pickle
 import ImageManip
 import unittest
-import testFiles
+import tests.config as config
 import random
 
 if __name__ == '__main__':
     # Pickle up the originals
     original_images = {}
     pickle_file_name = "testOriginals.pickle"
-    for file_name in testFiles.file_names:
+    for file_name in config.FILE_NAMES:
         file_name = file_name + ".bmp"
         file = open(file_name, "rb")
         original_images[file_name] = file.read()
@@ -31,7 +31,7 @@ if __name__ == '__main__':
         solution_images = {}
         pickle_file_name = test._tests[0]._tests[0].__module__ + ".pickle"
         if test_image_sets is None:
-            test_image_sets = list([file_name] for file_name in testFiles.file_names)
+            test_image_sets = list([file_name] for file_name in config.FILE_NAMES)
         for original_file_names in test_image_sets:
             random.seed(0)  # make it predictably random
             original_files = []

@@ -12,4 +12,4 @@ class Test(testTool.Test, unittest.TestCase):
         ["even"],
         ["bmpV1"],
     ]
-    test_weight = 100
+    test_weight = 50

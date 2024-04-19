@@ -1,4 +1,6 @@
-file_names = [
+DEFAULT_STARTING_IMAGE_PATH = "images/uchicago.bmp"
+
+FILE_NAMES = [
     "even",
     "square",
     "wider",
