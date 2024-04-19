@@ -7,6 +7,7 @@ from io import BytesIO
 from kivy.app import App
 from kivy.core.image import Image as CoreImage
 from kivy.core.window import Window
+from kivy.input.providers.mouse import MouseMotionEvent
 from kivy.uix.button import Button
 from kivy.uix.colorpicker import ColorPicker
 from kivy.uix.dropdown import DropDown
@@ -85,6 +86,48 @@ def _get_chose_color() -> tuple[int, int, int]:
 
 def _get_extra_text() -> str:
     return PythoShopApp._root.extra_input.text
+
+
+def _write_image_to_file_system(bytes: BytesIO) -> None:
+    bytes.seek(0)
+    new_image_file_name = os.path.join(os.path.expanduser("~"), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S") + ".bmp")
+    new_image_file = open(new_image_file_name, "wb")
+    new_image_file.write(bytes.read())
+    new_image_file.close()
+
+
+def _is_touch_in_image(cimage: UixImage, touch: MouseMotionEvent, cscatter) -> bool:
+    if not cimage.parent.collide_point(*touch.pos):
+        return False
+    else:
+        lr_space = (cimage.width - cimage.norm_image_size[0]) / 2  # empty space in Image widget left and right of actual image
+        tb_space = (cimage.height - cimage.norm_image_size[1]) / 2  # empty space in Image widget above and below actual image
+        pixel_x = touch.x - lr_space - cscatter.x  # x coordinate of touch measured from lower left of actual image
+        pixel_y = touch.y - tb_space - cscatter.y  # y coordinate of touch measured from lower left of actual image
+        if pixel_x < 0 or pixel_y < 0:
+            return False
+        elif pixel_x >= cimage.norm_image_size[0] or pixel_y >= cimage.norm_image_size[1]:
+            return False
+        else:
+            return True
+
+
+def _handle_touch_in_image(cimage, touch, cscatter) -> None:
+    lr_space = (cimage.width - cimage.norm_image_size[0]) / 2  # empty space in Image widget left and right of actual image
+    tb_space = (cimage.height - cimage.norm_image_size[1]) / 2  # empty space in Image widget above and below actual image
+    pixel_x = touch.x - lr_space - cscatter.x  # x coordinate of touch measured from lower left of actual image
+    pixel_y = touch.y - tb_space - cscatter.y  # y coordinate of touch measured from lower left of actual image
+
+    assert pixel_x >= 0 and pixel_y >= 0 and pixel_x < cimage.norm_image_size[0] and pixel_y < cimage.norm_image_size[1]
+
+    # scale coordinates to actual pixels of the Image source
+    actual_x = int(pixel_x * cimage.texture_size[0] / cimage.norm_image_size[0])
+    actual_y = int(pixel_y * cimage.texture_size[1] / cimage.norm_image_size[1])
+    # Note: can't call your manip functions "_select_"
+    if PythoShopApp._tool_function.__name__[:8] == "_select_":
+        PythoShopApp._tool_function(actual_x, actual_y)
+    else:
+        run_manip_function(PythoShopApp._tool_function, clicked_coordinate=(actual_x, actual_y))
 
 
 def run_manip_function(func: typing.Callable, **kwargs) -> None:
@@ -233,36 +276,13 @@ class PhotoShopWidget(Widget):
             bytes = PythoShopApp._bytes2
 
         if bytes:
-            bytes.seek(0)
-            new_image_file_name = os.path.join(os.path.expanduser("~"), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S") + ".bmp")
-            new_image_file = open(new_image_file_name, "wb")
-            new_image_file.write(bytes.read())
-            new_image_file.close()
+            _write_image_to_file_system(bytes)
 
     def apply_tool(self, touch, callback) -> typing.Optional[bool]:
         cimage, cbytes, cscatter = _get_current_image()
-        if cimage and PythoShopApp._tool_function:
-            if not cimage.parent.collide_point(*touch.pos):
-                return callback(touch)
-            else:
-                lr_space = (cimage.width - cimage.norm_image_size[0]) / 2  # empty space in Image widget left and right of actual image
-                tb_space = (cimage.height - cimage.norm_image_size[1]) / 2  # empty space in Image widget above and below actual image
-                pixel_x = touch.x - lr_space - cscatter.x  # x coordinate of touch measured from lower left of actual image
-                pixel_y = touch.y - tb_space - cscatter.y  # y coordinate of touch measured from lower left of actual image
-                if pixel_x < 0 or pixel_y < 0:
-                    return callback(touch)
-                elif pixel_x >= cimage.norm_image_size[0] or pixel_y >= cimage.norm_image_size[1]:
-                    return callback(touch)
-                else:
-                    # scale coordinates to actual pixels of the Image source
-                    actual_x = int(pixel_x * cimage.texture_size[0] / cimage.norm_image_size[0])
-                    actual_y = int(pixel_y * cimage.texture_size[1] / cimage.norm_image_size[1])
-                    # Note: can't call your manip functions "_select_"
-                    if PythoShopApp._tool_function.__name__[:8] == "_select_":
-                        PythoShopApp._tool_function(actual_x, actual_y)
-                    else:
-                        run_manip_function(PythoShopApp._tool_function, clicked_coordinate=(actual_x, actual_y))
-                    return True
+        if cimage and PythoShopApp._tool_function and _is_touch_in_image(cimage, touch, cscatter):
+            _handle_touch_in_image(cimage, touch, cscatter)
+            return True
         else:
             return callback(touch)
 
