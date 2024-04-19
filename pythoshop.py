@@ -23,7 +23,13 @@ class NoImageError(Exception):
     pass
 
 
-def _set_extra(value) -> None:
+def _set_extra(value: str) -> None:
+    """
+    Set the "extra parameters..." box to a particular value
+
+    :params value: The value to put in the box
+    :returns: None
+    """
     PythoShopApp._root.extra_input.text = value
 
 
@@ -31,15 +37,23 @@ def _select_coordinate(x: int, y: int) -> None:
     _set_extra(f"{x}, {y}")
 
 
-def get_current_image() -> tuple:
-    if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+def _is_primary_tab_selected() -> bool:
+    return bool(PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab)
+
+
+def _is_secondary_tab_selected() -> bool:
+    return bool(PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab)
+
+
+def _get_current_image() -> tuple[typing.Any, typing.Optional[BytesIO], typing.Any]:
+    if _is_primary_tab_selected():
         return PythoShopApp._image1, PythoShopApp._bytes1, PythoShopApp._root.image1
     else:
         return PythoShopApp._image2, PythoShopApp._bytes2, PythoShopApp._root.image2
 
 
 def _select_color(x: int, y: int) -> None:  # sourcery skip: merge-else-if-into-elif
-    cimage, cbytes, cscatter = get_current_image()
+    cimage, cbytes, cscatter = _get_current_image()
     if cbytes:
         img = Image.open(cbytes)
         r, g, b = img.getpixel((x, img.height - 1 - y))
@@ -61,46 +75,66 @@ def _get_image_bytes(file_name: str) -> BytesIO:
     return current_bytes
 
 
-def run_manip_function(func, **kwargs) -> None:
-    if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+def _get_chose_color() -> tuple[int, int, int]:
+    return (
+        int(PythoShopApp._root.color_button.background_color[0] * 255),
+        int(PythoShopApp._root.color_button.background_color[1] * 255),
+        int(PythoShopApp._root.color_button.background_color[2] * 255),
+    )
+
+
+def _get_extra_text() -> str:
+    return PythoShopApp._root.extra_input.text
+
+
+def run_manip_function(func: typing.Callable, **kwargs) -> None:
+    """
+    Helper function to dispatch either a call to a tool or a filter. Essentially
+    the function captures the current state selected by the user and sends it
+    as kwargs to selected function in `image_manip.py`.
+
+    :args func: The transformation that the user wants to do
+    :args kwargs: Optional arguments (e.g., clicked_coordinates) that are add to
+    :return: None
+    """
+    if _is_primary_tab_selected():
         cimage = PythoShopApp._image1
         bytes1 = PythoShopApp._bytes1
         bytes2 = PythoShopApp._bytes2
-    elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
+    elif _is_secondary_tab_selected():
         cimage = PythoShopApp._image2
         bytes1 = PythoShopApp._bytes2
         bytes2 = PythoShopApp._bytes1
     else:
         raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
+
     if cimage is None or bytes1 is None:
         raise NoImageError("The currently selected tab doesn't have an image loaded into it")
     try:
-        chosen_color = (
-            int(PythoShopApp._root.color_button.background_color[0] * 255),
-            int(PythoShopApp._root.color_button.background_color[1] * 255),
-            int(PythoShopApp._root.color_button.background_color[2] * 255),
-        )
-        extra_input = PythoShopApp._root.extra_input.text
         bytes1.seek(0)
+        kwargs["color"] = _get_chose_color()
+        kwargs["extra"] = _get_extra_text()
+        kwargs["other_image"] = None
         if bytes2:
             bytes2.seek(0)
             kwargs["other_image"] = bytes2
-        kwargs["color"] = chosen_color
-        kwargs["extra"] = extra_input
+
         result = func(bytes1, **kwargs)
+
         if result != None:  # Something was returned, make sure it was an image file
             if result.__class__ != BytesIO:
                 raise Exception("Function", func.__name__, "should have returned an image but instead returned something else")
-            if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+
+            if _is_primary_tab_selected():
                 result_bytes = PythoShopApp._bytes1 = result
-            elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
+            elif _is_secondary_tab_selected():
                 result_bytes = PythoShopApp._bytes2 = result
             else:
                 raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
         else:  # No return: assume that the change has been made to the image itself (img1)
-            if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+            if _is_primary_tab_selected():
                 PythoShopApp._bytes1 = bytes1
-            elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
+            elif _is_secondary_tab_selected():
                 PythoShopApp._bytes2 = bytes1
             else:
                 raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
@@ -123,22 +157,21 @@ class FileChooserDialog(Widget):
 
     def open(self, file_name: list[str]) -> None:
         if not file_name:
-            # Early exit if no file selected
-            return
+            return  # Early exit if no file selected
 
-        if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+        if _is_primary_tab_selected():
             image = PythoShopApp._image1
             scatter = PythoShopApp._root.image1
-            if image is not None:
-                PythoShopApp._root.image1.remove_widget(image)
-        elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
+        elif _is_secondary_tab_selected():
             image = PythoShopApp._image2
             scatter = PythoShopApp._root.image2
-            if image is not None:
-                PythoShopApp._root.image2.remove_widget(image)
         else:
             raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
 
+        if image is not None:
+            scatter.remove_widget(image)
+
+        assert PhotoShopWidget._file_chooser_popup
         PhotoShopWidget._file_chooser_popup.dismiss()
 
         current_bytes = _get_image_bytes(file_name[0])
@@ -146,10 +179,10 @@ class FileChooserDialog(Widget):
         cimg = CoreImage(current_bytes, ext="bmp")
 
         uix_image = UixImage(fit_mode="contain")
-        if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
+        if _is_primary_tab_selected():
             PythoShopApp._bytes1 = current_bytes
             PythoShopApp._image1 = uix_image
-        elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
+        elif _is_secondary_tab_selected():
             PythoShopApp._bytes2 = current_bytes
             PythoShopApp._image2 = uix_image
         else:
@@ -175,7 +208,7 @@ class FileChooserDialog(Widget):
 
 
 class PhotoShopWidget(Widget):
-    _file_chooser_popup = None
+    _file_chooser_popup: typing.Optional[Popup] = None
 
     def toggle_color(self) -> None:
         if PythoShopApp._color_picker.is_visible:
@@ -194,10 +227,11 @@ class PhotoShopWidget(Widget):
 
     def save_image(self) -> None:
         bytes = None
-        if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab and PythoShopApp._image1:
+        if _is_primary_tab_selected() and PythoShopApp._image1:
             bytes = PythoShopApp._bytes1
-        elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab and PythoShopApp._image2:
+        elif _is_secondary_tab_selected() and PythoShopApp._image2:
             bytes = PythoShopApp._bytes2
+
         if bytes:
             bytes.seek(0)
             new_image_file_name = os.path.join(os.path.expanduser("~"), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S") + ".bmp")
@@ -206,7 +240,7 @@ class PhotoShopWidget(Widget):
             new_image_file.close()
 
     def apply_tool(self, touch, callback) -> typing.Optional[bool]:
-        cimage, cbytes, cscatter = get_current_image()
+        cimage, cbytes, cscatter = _get_current_image()
         if cimage and PythoShopApp._tool_function:
             if not cimage.parent.collide_point(*touch.pos):
                 return callback(touch)
@@ -240,14 +274,14 @@ class PhotoShopWidget(Widget):
 
 
 class PythoShopApp(App):
-    _image1 = None
-    _bytes1 = None
-    _image2 = None
-    _bytes2 = None
-    _root = None
-    _tool_function = None
-    _color_picker = None
-    _first_color = True
+    _image1: typing.Any = None
+    _bytes1: typing.Optional[BytesIO] = None
+    _image2: typing.Any = None
+    _bytes2: typing.Optional[BytesIO] = None
+    _root: typing.Any = None
+    _tool_function: typing.Any = None
+    _color_picker: typing.Any = None
+    _first_color: bool = True
 
     def on_color(self, value):
         my_value = value.copy()  # we ignore the alpha chanel
