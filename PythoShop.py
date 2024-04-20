@@ -193,9 +193,19 @@ class FileChooserDialog(Widget):
         uix_image.texture.mag_filter = "nearest"
         uix_image.texture.min_filter = "nearest"
         uix_image.size_hint = [None, None]
+
+        # Callback to change size of image based on the rendered scatter
+        def resize_image(instance, value):
+            uix_image.size = instance.size
+            uix_image.pos = (0, 0)
+
+        # Bind resize_image to size and pos changes of the scatter
+        scatter.bind(size=resize_image, pos=resize_image)
+
         uix_image.size = scatter.size
         uix_image.pos = (0, 0)
         scatter.add_widget(uix_image, 100)
+
 
 class PhotoShopWidget(Widget):
     _file_chooser_popup = None
@@ -365,8 +375,16 @@ class PythoShopApp(App):
             uix_image.texture.mag_filter = "nearest"
             uix_image.texture.min_filter = "nearest"
             uix_image.size_hint = [None, None]
-            uix_image.size = (640, 480)
-            uix_image.pos = (0, 0)
+
+            # Callback to change size of image based on the rendered scatter
+            def resize_image(instance, value):
+                uix_image.size = instance.size
+                uix_image.pos = (0, 0)
+
+            # Bind resize_image to size and pos changes of the scatter
+            # NB: This is required since at the start of the program we don't
+            # yet know the final size of the scatter.
+            PythoShopApp._root.image1.bind(size=resize_image, pos=resize_image)
             PythoShopApp._root.image1.add_widget(uix_image, 100)
 
         return PythoShopApp._root
