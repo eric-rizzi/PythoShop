@@ -29,7 +29,7 @@
             "name": "Tests",
             "type": "python",
             "request": "launch",
-            "program": "tests/test_runner",
+            "program": "tests/test_runner.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "env": {
