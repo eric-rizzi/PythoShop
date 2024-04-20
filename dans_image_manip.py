@@ -148,6 +148,18 @@ def draw_centered_vline(image, **kwargs):
 
 
 @export_filter
+def draw_sloping_lines(image, color, **kwargs):
+    fpp, width, height, bpp, row_size, padding = get_info(image)
+    color = bytes(list(reversed(color)))
+    min_dimension = min(width, height)
+    for pixel in range(min_dimension):
+        go_to(image, (pixel, pixel))
+        image.write(color)
+        go_to(image, (width - 1 - pixel, pixel))
+        image.write(color)
+
+
+@export_filter
 def draw_bisecting_diagonals(image, **kwargs):
     # extra could be a width
     first_pixel, width, height, bpp, row_size, row_padding = get_info(image)
@@ -173,6 +185,37 @@ def draw_bisecting_diagonals(image, **kwargs):
         image.seek(3 * (width - 2 * (before + length)), 1)
         for pixel in range(length):
             image.write(bytes(bmp_color))
+
+
+@export_tool
+def draw_x(image, clicked_coordinate, color, extra, **kwargs):
+    try:
+        radius = int(extra)
+    except:
+        radius = 3
+    fpp, width, height, bpp, row_size, padding = get_info(image)
+    x, y = clicked_coordinate
+    length = radius * 2 + 1
+    if x - radius >= 0:
+        start_x = x - radius
+    else:
+        start_x = 0
+        length += x - radius
+    if x + radius + 1 > width:
+        length -= x + radius + 1 - width
+    for pixel in range(radius + 1):
+        if 0 < y - pixel < height and 0 < x - pixel < width:
+            image.seek(fpp + (width * 3 + padding) * (y - pixel) + (x - pixel) * 3)
+            image.write(bytes([color[2], color[1], color[0]]))
+        if 0 < y - pixel < height and 0 < x + pixel < width:
+            image.seek(fpp + (width * 3 + padding) * (y - pixel) + (x + pixel) * 3)
+            image.write(bytes([color[2], color[1], color[0]]))
+        if 0 < y + pixel < height and 0 < x - pixel < width:
+            image.seek(fpp + (width * 3 + padding) * (y + pixel) + (x - pixel) * 3)
+            image.write(bytes([color[2], color[1], color[0]]))
+        if 0 < y + pixel < height and 0 < x + pixel < width:
+            image.seek(fpp + (width * 3 + padding) * (y + pixel) + (x + pixel) * 3)
+            image.write(bytes([color[2], color[1], color[0]]))
 
 
 # Lesson: Changing parts of a pixel
