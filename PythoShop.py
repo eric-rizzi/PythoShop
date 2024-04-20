@@ -57,6 +57,36 @@ def _get_image_bytes(file_name: str) -> BytesIO:
     return current_bytes
 
 
+def check_bmp_integrity(image: BytesIO):
+    image.seek(0)
+    assert image.read(2) == b'\x42\x4D', "header field was invalid"
+    file_byte_size = int.from_bytes(image.read(4), "little")
+    image.seek(10)
+    first_pixel_offset = int.from_bytes(image.read(4), "little")
+    header_size = int.from_bytes(image.read(4), "little") # should be fpp - 14
+    pixel_width = int.from_bytes(image.read(4), "little")
+    pixel_height = int.from_bytes(image.read(4), "little")
+    color_planes = int.from_bytes(image.read(2), "little")
+    assert color_planes == 1, "color planes should be 1"
+    bits_per_pixel = int.from_bytes(image.read(2), "little")
+    bits_per_pixel_possibilities = [1, 4, 8, 16, 24, 32]
+    assert bits_per_pixel in bits_per_pixel_possibilities, "bits per pixel is set to " + str(bits_per_pixel) + " which is not one of the allowed options: " + ", ".join(bits_per_pixel_possibilities)
+    bits_per_row = pixel_width * bits_per_pixel
+    bytes_per_row = math.ceil(bits_per_row / 8)
+    padding_bytes = 0
+    if bytes_per_row % 4 != 0:
+        padding_bytes = 4 - bytes_per_row % 4
+    row_byte_size = bytes_per_row + padding_bytes
+    theoretical_file_size = first_pixel_offset + row_byte_size * pixel_height
+    assert file_byte_size == theoretical_file_size, "file size is incorrect"
+    compression = int.from_bytes(image.read(4), "little")
+    assert compression == 0, "PythoShop doesn't support images with compression"
+    pixel_data_byte_size = int.from_bytes(image.read(4), "little")
+    assert pixel_data_byte_size == 0 or pixel_data_byte_size == row_byte_size * pixel_height, "pixel data size can either be 0 or the actual size"
+    # only validates the header up to position 38
+    image.seek(0)
+
+
 def run_manip_function(func, **kwargs):
     if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
         cimage = PythoShopApp._image1
@@ -87,6 +117,11 @@ def run_manip_function(func, **kwargs):
         if result != None: # Something was returned, make sure it was an image file
             if result.__class__ != BytesIO:
                 raise Exception("Function", func.__name__, "should have returned an image but instead returned something else")
+            # Before we use the result, make sure it's valid
+            try:
+                check_bmp_integrity(result)
+            except AssertionError as ae:
+                raise Exception('The image returned by "' + func.__name__ + '" was corrupt and cannot be displayed: '+str(ae))
             if PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab:
                 result_bytes = PythoShopApp._bytes1 = result
             elif PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab:
@@ -101,6 +136,10 @@ def run_manip_function(func, **kwargs):
             else:
                 raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
             result_bytes = bytes1
+            try:
+                check_bmp_integrity(result_bytes)
+            except AssertionError as ae:
+                raise Exception('The image returned by "' + func.__name__ + '" was corrupt and cannot be displayed: '+str(ae))
         
         result_bytes.seek(0)
         cimage.texture = CoreImage(result_bytes, ext='bmp').texture
