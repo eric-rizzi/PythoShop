@@ -97,26 +97,59 @@ def change_pixel(image, clicked_coordinate, **kwargs):
 @export_filter
 def mark_middle(image, **kwargs):
     fpp, width, height, bpp, row_size, padding = get_info(image)
-    kwargs.pop("clicked_coordinate")
     change_pixel(image, (round(width / 2), round(height / 2)), **kwargs)
+
+
+@export_filter
+def mark_four_corners(image, color, **kwargs):
+    h = get_height(image) - 1
+    w = get_width(image) - 1
+    set_pixel_rgb(image, (0, 0), color)
+    set_pixel_rgb(image, (0, h), color)
+    set_pixel_rgb(image, (w, 0), color)
+    set_pixel_rgb(image, (w, h), color)
+
+
+@export_filter
+def mark_middle_with_t(image, color, **kwargs):
+    middle_y = round(get_height(image) / 2)
+    middle_x = round(get_width(image) / 2)
+    set_pixel_rgb(image, (middle_x, middle_y), color)
+    for i in range(1, 3):
+        set_pixel_rgb(image, (middle_x - i, middle_y), color)
+        set_pixel_rgb(image, (middle_x, middle_y - i), color)
+        set_pixel_rgb(image, (middle_x + i, middle_y), color)
+        set_pixel_rgb(image, (middle_x, middle_y + i), color)
+
+
+@export_tool
+def draw_t(image, clicked_coordinate, color, **kwargs):
+    x, y = clicked_coordinate
+    set_pixel_rgb(image, (x, y), color)
+    for i in range(1, 3):
+        set_pixel_rgb(image, (x - i, y), color)
+        set_pixel_rgb(image, (x, y - i), color)
+        set_pixel_rgb(image, (x + i, y), color)
+        set_pixel_rgb(image, (x, y + i), color)
 
 
 # Lesson: Draw some lines
 
 
 @export_tool
-def draw_hline(image, clicked_coordinate, **kwargs):
-    fpp, width, height, bpp, row_size, padding = get_info(image)
+def draw_hline(image, clicked_coordinate, color, **kwargs) -> None:
+    width = get_width(image)
     x, y = clicked_coordinate
-    color = list(reversed(kwargs["color"]))  # get it in bitmap (BGR) order
+
     try:
         thickness = int(kwargs["extra"])
     except:
         thickness = 1
+
     start_row = y - round(thickness / 2)
-    row_of_pixels = color * width + [0] * padding
-    image.seek(fpp + row_size * start_row)
-    image.write(bytes(row_of_pixels))
+    for alt_y in range(thickness):
+        for x in range(width):
+            set_pixel_rgb(image, (x, start_row + alt_y), color)
 
 
 @export_tool
