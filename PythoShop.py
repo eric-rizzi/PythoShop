@@ -106,6 +106,42 @@ def _get_image_bytes(file_name: str) -> BytesIO:
     return current_bytes
 
 
+def _get_chosen_color() -> tuple[int, int, int]:
+    """
+    Get currently selected color in RGB format
+
+    :returns: RBG tuple
+    """
+    return (
+        int(PythoShopApp._root.color_button.background_color[0] * 255),
+        int(PythoShopApp._root.color_button.background_color[1] * 255),
+        int(PythoShopApp._root.color_button.background_color[2] * 255),
+    )
+
+
+def _get_extra_text() -> str:
+    """
+    Get text in the "extra parameters..." box
+
+    :returns: String that is inside the box
+    """
+    return PythoShopApp._root.extra_input.text
+
+
+def _write_image_to_file_system(bytes: BytesIO) -> None:
+    """
+    Writes given bytes to the file system as a bitmap
+
+    :param bytes: Bytes of bitmap to write to the filesystem
+    :returns: None
+    """
+    bytes.seek(0)
+    new_image_file_name = os.path.join(os.path.expanduser("~"), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S") + ".bmp")
+    new_image_file = open(new_image_file_name, "wb")
+    new_image_file.write(bytes.read())
+    new_image_file.close()
+
+
 def check_bmp_integrity(image: BytesIO) -> None:
     image.seek(0)
     assert image.read(2) == b"\x42\x4D", "header field was invalid"
@@ -154,18 +190,12 @@ def run_manip_function(func: typing.Callable, **kwargs) -> None:
         raise NoImageError("The currently selected tab doesn't have an image loaded into it")
 
     try:
-        chosen_color = (
-            int(PythoShopApp._root.color_button.background_color[0] * 255),
-            int(PythoShopApp._root.color_button.background_color[1] * 255),
-            int(PythoShopApp._root.color_button.background_color[2] * 255),
-        )
-        extra_input = PythoShopApp._root.extra_input.text
         bytes1.seek(0)
+        kwargs["color"] = _get_chosen_color()
+        kwargs["extra"] = _get_extra_text()
         if bytes2:
             bytes2.seek(0)
             kwargs["other_image"] = bytes2
-        kwargs["color"] = chosen_color
-        kwargs["extra"] = extra_input
         result = func(bytes1, **kwargs)
         if result != None:  # Something was returned, make sure it was an image file
             if result.__class__ != BytesIO:
@@ -287,11 +317,7 @@ class PhotoShopWidget(Widget):
             bytes = PythoShopApp._bytes2
 
         if bytes:
-            bytes.seek(0)
-            new_image_file_name = os.path.join(os.path.expanduser("~"), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S") + ".bmp")
-            new_image_file = open(new_image_file_name, "wb")
-            new_image_file.write(bytes.read())
-            new_image_file.close()
+            _write_image_to_file_system(bytes)
 
     def apply_tool(self, event, callback):
         cimage, cbytes, cscatter = _get_current_image()
