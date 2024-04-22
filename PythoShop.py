@@ -2,6 +2,7 @@ import importlib.util
 import math
 import os
 import time
+import typing
 from io import BytesIO
 
 from kivy.app import App
@@ -24,7 +25,7 @@ class NoImageError(Exception):
     pass
 
 
-def _set_extra(value):
+def _set_extra(value: str) -> None:
     """
     Set the "extra parameters..." box to a particular value
 
@@ -34,7 +35,14 @@ def _set_extra(value):
     PythoShopApp._root.extra_input.text = value
 
 
-def _select_coordinate(x, y):
+def _select_coordinate(x: int, y: int) -> None:
+    """
+    Put a given (x, y) coordinate into the `extra parameters...` box
+
+    :param x: x value coordinate to set the system to
+    :param y: y value coordinate to set the system to
+    :returns: None
+    """
     _set_extra(f"{x}, {y}")
 
 
@@ -57,13 +65,25 @@ def _is_secondary_tab_selected() -> bool:
 
 
 def _get_current_image():
+    """
+    Get the data associated with the currently loaded image
+
+    :returns: Tuple of (image, bytes_in_image, and image_scatter)
+    """
     if _is_primary_tab_selected():
         return PythoShopApp._image1, PythoShopApp._bytes1, PythoShopApp._root.image1
     else:
         return PythoShopApp._image2, PythoShopApp._bytes2, PythoShopApp._root.image2
 
 
-def _select_color(x, y):  # sourcery skip: merge-else-if-into-elif
+def _select_color(x: int, y: int) -> None:  # sourcery skip: merge-else-if-into-elif
+    """
+    Set the color picker to be the RGB of a particular (x, y) coordinate
+
+    :param x: The x value of the pixel to sample
+    :param y: The y value of the pixel to sample
+    :returns: None
+    """
     cimage, cbytes, cscatter = _get_current_image()
     if cbytes:
         img = Image.open(cbytes)
@@ -86,7 +106,7 @@ def _get_image_bytes(file_name: str) -> BytesIO:
     return current_bytes
 
 
-def check_bmp_integrity(image: BytesIO):
+def check_bmp_integrity(image: BytesIO) -> None:
     image.seek(0)
     assert image.read(2) == b"\x42\x4D", "header field was invalid"
     file_byte_size = int.from_bytes(image.read(4), "little")
@@ -118,7 +138,7 @@ def check_bmp_integrity(image: BytesIO):
     image.seek(0)
 
 
-def run_manip_function(func, **kwargs):
+def run_manip_function(func: typing.Callable, **kwargs) -> None:
     if _is_primary_tab_selected():
         cimage = PythoShopApp._image1
         bytes1 = PythoShopApp._bytes1
