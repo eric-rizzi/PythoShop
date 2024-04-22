@@ -47,6 +47,17 @@ def draw_t(image, clicked_coordinate, color, **kwargs):
 
 
 @export_tool
+def draw_x(image, clicked_coordinate, color, **kwargs):
+    x, y = clicked_coordinate
+    set_pixel_rgb(image, (x, y), color)
+    for i in range(1, 3):
+        set_pixel_rgb(image, (x + i, y + i), color)
+        set_pixel_rgb(image, (x - i, y - i), color)
+        set_pixel_rgb(image, (x + i, y - i), color)
+        set_pixel_rgb(image, (x - i, y + i), color)
+
+
+@export_tool
 def draw_hline(image, clicked_coordinate, color, **kwargs) -> None:
     width = get_width(image)
     x, y = clicked_coordinate
