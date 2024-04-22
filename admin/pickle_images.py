@@ -36,6 +36,13 @@ def create_artifacts_for_tests(
     pickle_file_name = test_module_name.split(".")[-1] + ".pickle"
     pickle_file_path = os.path.join(config.EXPECTED_OUTPUT_IMAGE_FOLDER, pickle_file_name)
 
+    # Overall idea for test creation:
+    # for each filter/tool
+    #     for each image for testing filter/tool
+    #         write original contents to test file
+    #         run the transform on the file
+    #         capture the output and write over the test file
+    #     pickle all files created for filter/tool
     for original_file_names in test_image_sets:
         random.seed(0)  # make it predictably random
         original_files: list[typing.BinaryIO] = []
@@ -43,10 +50,6 @@ def create_artifacts_for_tests(
         solution_file_name = test_name + args_name + "-" + "-".join(original_file_names) + ".bmp"
         solution_file_path = os.path.join(config.EXPECTED_OUTPUT_IMAGE_FOLDER, solution_file_name)
 
-        # Something about:
-        # 1. Write origin contents to test file
-        # 2. Run the transform on the file
-        # 3. Capture the output and write over the test file
         solution_fp = open(solution_file_path, "wb+")
         solution_fp.write(original_images[original_file_names[0] + ".bmp"])
         original_files.append(solution_fp)
