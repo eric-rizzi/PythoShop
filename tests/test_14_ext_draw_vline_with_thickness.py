@@ -8,4 +8,4 @@ class Extension(testTool.Test, unittest.TestCase):
 
     def __init__(self, test):
         super().__init__(test)
-        self.__class__.test_parameters.update({"extra": "4"})
+        self.__class__.test_parameters.update({"extra": "3"})
