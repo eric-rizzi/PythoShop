@@ -65,7 +65,7 @@ def _is_secondary_tab_selected() -> bool:
     return bool(PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab)
 
 
-def _get_current_image():
+def _get_current_image() -> tuple[typing.Optional[UixImage], typing.Optional[BytesIO], typing.Any]:
     """
     Get the data associated with the currently loaded image
 
@@ -85,6 +85,8 @@ def _select_color(x: int, y: int) -> None:  # sourcery skip: merge-else-if-into-
     :param y: The y value of the pixel to sample
     :returns: None
     """
+    assert PythoShopApp._color_picker
+
     cimage, cbytes, cscatter = _get_current_image()
     if cbytes:
         img = Image.open(cbytes)
@@ -270,12 +272,12 @@ def run_manip_function(func: typing.Callable, **kwargs) -> None:
 
 
 class FileChooserDialog(Widget):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__()
         if "rootpath" in kwargs:
             self.file_chooser.rootpath = kwargs["rootpath"]
 
-    def open(self, file_name):
+    def open(self, file_name: list[str]) -> None:
         if len(file_name) != 1:
             return
 
@@ -371,13 +373,13 @@ class PhotoShopWidget(Widget):
 
 
 class PythoShopApp(App):
-    _image1 = None
-    _bytes1 = None
-    _image2 = None
-    _bytes2 = None
-    _root = None
-    _tool_function = None
-    _color_picker = None
+    _image1: typing.Optional[UixImage] = None
+    _bytes1: typing.Optional[BytesIO] = None
+    _image2: typing.Optional[UixImage] = None
+    _bytes2: typing.Optional[BytesIO] = None
+    _root: typing.Any = None
+    _tool_function: typing.Any = None
+    _color_picker: typing.Optional[ColorPicker] = None
     _first_color = True
 
     def on_color(self, value):
