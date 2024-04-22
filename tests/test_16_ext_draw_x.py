@@ -5,7 +5,7 @@ import tests.test_tool as test_tool
 
 class Extension(test_tool.Test, unittest.TestCase):
     manip_func_name = "draw_x"
-    test_weight = 25
+    test_weight = 20
 
     def __init__(self, test):
         super().__init__(test)
