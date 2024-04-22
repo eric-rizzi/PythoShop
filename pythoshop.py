@@ -35,18 +35,40 @@ def _set_extra(value: str) -> None:
 
 
 def _select_coordinate(x: int, y: int) -> None:
+    """
+    Put a given (x, y) coordinate into the `extra parameters...` box
+
+    :param x: x value coordinate to set the system to
+    :param y: y value coordinate to set the system to
+    :returns: None
+    """
     _set_extra(f"{x}, {y}")
 
 
 def _is_primary_tab_selected() -> bool:
+    """
+    Determine if the "primary" tab is selected in the Kivy window.
+
+    :returns: T/F if primary tab is selected
+    """
     return bool(PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab)
 
 
 def _is_secondary_tab_selected() -> bool:
+    """
+    Determine if the "secondary" tab is selected in the Kivy window.
+
+    :returns: T/F if secondary tab is selected
+    """
     return bool(PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab)
 
 
 def _get_current_image() -> tuple[typing.Any, typing.Optional[BytesIO], typing.Any]:
+    """
+    Get the data associated with the currently loaded image
+
+    :returns: Tuple of (image, bytes_in_image, and image_scatter)
+    """
     if _is_primary_tab_selected():
         return PythoShopApp._image1, PythoShopApp._bytes1, PythoShopApp._root.image1
     else:
@@ -54,6 +76,13 @@ def _get_current_image() -> tuple[typing.Any, typing.Optional[BytesIO], typing.A
 
 
 def _select_color(x: int, y: int) -> None:  # sourcery skip: merge-else-if-into-elif
+    """
+    Set the color picker to be the RGB of a particular (x, y) coordinate
+
+    :param x: The x value of the pixel to sample
+    :param y: The y value of the pixel to sample
+    :returns: None
+    """
     cimage, cbytes, cscatter = _get_current_image()
     if cbytes:
         img = Image.open(cbytes)
@@ -76,7 +105,12 @@ def _get_image_bytes(file_name: str) -> BytesIO:
     return current_bytes
 
 
-def _get_chose_color() -> tuple[int, int, int]:
+def _get_chosen_color() -> tuple[int, int, int]:
+    """
+    Get currently selected color in RGB format
+
+    :returns: RBG tuple
+    """
     return (
         int(PythoShopApp._root.color_button.background_color[0] * 255),
         int(PythoShopApp._root.color_button.background_color[1] * 255),
@@ -85,15 +119,12 @@ def _get_chose_color() -> tuple[int, int, int]:
 
 
 def _get_extra_text() -> str:
+    """
+    Get text in the "extra parameters..." box
+
+    :returns: String that is inside the box
+    """
     return PythoShopApp._root.extra_input.text
-
-
-def _write_image_to_file_system(bytes: BytesIO) -> None:
-    bytes.seek(0)
-    new_image_file_name = os.path.join(os.path.expanduser("~"), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S") + ".bmp")
-    new_image_file = open(new_image_file_name, "wb")
-    new_image_file.write(bytes.read())
-    new_image_file.close()
 
 
 def _is_touch_in_image(cimage: UixImage, touch: MouseMotionEvent, cscatter) -> bool:
@@ -130,6 +161,20 @@ def _handle_touch_in_image(cimage, touch, cscatter) -> None:
         run_manip_function(PythoShopApp._tool_function, clicked_coordinate=(actual_x, actual_y))
 
 
+def _write_image_to_file_system(bytes: BytesIO) -> None:
+    """
+    Writes given bytes to the file system as a bitmap
+
+    :param bytes: Bytes of bitmap to write to the filesystem
+    :returns: None
+    """
+    bytes.seek(0)
+    new_image_file_name = os.path.join(os.path.expanduser("~"), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S") + ".bmp")
+    new_image_file = open(new_image_file_name, "wb")
+    new_image_file.write(bytes.read())
+    new_image_file.close()
+
+
 def run_manip_function(func: typing.Callable, **kwargs) -> None:
     """
     Helper function to dispatch either a call to a tool or a filter. Essentially
@@ -155,7 +200,7 @@ def run_manip_function(func: typing.Callable, **kwargs) -> None:
         raise NoImageError("The currently selected tab doesn't have an image loaded into it")
     try:
         bytes1.seek(0)
-        kwargs["color"] = _get_chose_color()
+        kwargs["color"] = _get_chosen_color()
         kwargs["extra"] = _get_extra_text()
         kwargs["other_image"] = None
         if bytes2:
