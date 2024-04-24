@@ -1,6 +1,6 @@
 IMAGES_FOLDER_PATH = "images"
-EXPECTED_OUTPUT_IMAGE_FOLDER = "images/expected_outputs"
-TEST_ORIGINALS_PICKLE_FILE_NAME = "images/test_originals.pickle"
+EXPECTED_OUTPUT_IMAGE_FOLDER = "tests/expected_outputs"
+TEST_ORIGINALS_PICKLE_FILE_NAME = "tests/expected_outputs/test_originals.pickle"
 DEFAULT_STARTING_IMAGE_PATH = "images/uchicago.bmp"
 
 FILE_NAMES = [

@@ -18,6 +18,10 @@ VSCODE_FILE_PATHS_TO_COPY = [
     ".vscode-students/settings.json",
 ]
 
+IMAGE_FILES = glob.glob("images/*.bmp")
+
+EXPECTED_OUTPUTS = glob.glob("tests/expected_outputs/*")
+
 
 def copy_readonly_files(files: list[str], destination_folder: str) -> None:
     # print("Verifying folder exists...")
@@ -41,11 +45,12 @@ def copy_readonly_files(files: list[str], destination_folder: str) -> None:
 def get_base_test_files() -> list[str]:
     base_test_files = []
     base_test_files += glob.glob("tests/config.py")
-    base_test_files += glob.glob("tests/test_base*")
-    base_test_files += glob.glob("tests/test_run*")
-    base_test_files += glob.glob("tests/test_tool*")
+    base_test_files += glob.glob("tests/test_base.py")
+    base_test_files += glob.glob("tests/test_base2.py")
+    base_test_files += glob.glob("tests/test_base3.py")
+    base_test_files += glob.glob("tests/test_runner.py")
+    base_test_files += glob.glob("tests/test_tool.py")
     base_test_files += glob.glob("tests/config.py")
-    base_test_files += glob.glob("images/change*")
     base_test_files += glob.glob("tests/test_0*")
 
     return base_test_files
@@ -75,9 +80,15 @@ if __name__ == "__main__":
         student_vscode_folder = os.path.join(student_folder, ".vscode")
         copy_readonly_files(VSCODE_FILE_PATHS_TO_COPY, student_vscode_folder)
 
+        images_folder = os.path.join(student_folder, "images")
+        copy_readonly_files(IMAGE_FILES, images_folder)
+
+        expected_outputs_folder = os.path.join(student_folder, "tests/expected_outputs")
+        copy_readonly_files(EXPECTED_OUTPUTS, expected_outputs_folder)
+
         student_test_folder = os.path.join(student_folder, "tests")
         copy_readonly_files(test_files_to_copy, student_test_folder)
 
-        image_manip = os.path.join(student_folder, "image_manip.py")
-        if not os.path.exists(image_manip):
-            shutil.copy("image_manip_blank.py", image_manip)
+        image_manip_path = os.path.join(student_folder, "image_manip.py")
+        if not os.path.exists(image_manip_path):
+            shutil.copy("image_manip_blank.py", image_manip_path)
