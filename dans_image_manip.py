@@ -1,11 +1,102 @@
+import functools
 import io
 import math
 import random
 
-from pythoshop_exports import *
+from pythoshop_exports import export_filter, export_tool
 
 
 # Helper functions
+@functools.lru_cache
+def _get_fpp(image: io.BytesIO) -> int:
+    """
+    Helper function to get the point in a bitmap file where the image "starts"
+
+    :param image: The bmp bytes
+    :returns: The index of the byte where the pixels "start"
+    """
+    image.seek(10)
+    return int.from_bytes(image.read(4), byteorder="little")
+
+
+@functools.lru_cache
+def get_height(image: io.BytesIO) -> int:
+    """
+    Helper function to get the height of a particular bitmap
+
+    :param image: The bmp bytes
+    :returns: The height of the bitmap
+    """
+    image.seek(22)
+    return int.from_bytes(image.read(4), byteorder="little")
+
+
+@functools.lru_cache
+def get_width(image: io.BytesIO) -> int:
+    """
+    Helper function to get the width of a particular bitmap
+
+    :param image: The bmp bytes
+    :returns: The width of the bitmap
+    """
+    image.seek(18)
+    return int.from_bytes(image.read(4), byteorder="little")
+
+
+@functools.lru_cache
+def _get_padding(image: io.BytesIO) -> int:
+    width = get_width(image)
+    row_size = width * 3
+    if row_size % 4 != 0:
+        return 4 - row_size % 4
+    else:
+        return 0
+
+
+def _seek_x_y(image: io.BytesIO, x_y_tuple: tuple[int, int]) -> None:
+    """
+    Helper function to seek to start of the pixel at a given (x, y) coordinate
+
+    :param image: The bmp bytes
+    :param x_y_tuple: An (x, y) tuple that represents the coordinates of a particular pixel
+    :returns: None
+    """
+    fpp = _get_fpp(image)
+    width = get_width(image)
+    padding = _get_padding(image)
+    image.seek(fpp + ((width * 3 + padding) * x_y_tuple[1]) + (x_y_tuple[0] * 3))
+
+
+def get_pixel_rgb(image: io.BytesIO, x_y_tuple: tuple[int, int]) -> tuple[int, int, int]:
+    """
+    Helper function to get the RGB value of a particular pixel
+
+    :param image: The bmp bytes
+    :param x_y_tuple: An (x, y) tuple that represents the coordinates of a particular pixel
+    :returns: (r, g, b) tuple
+    """
+    _seek_x_y(image, x_y_tuple)
+    b = int.from_bytes(image.read(1), byteorder="little")
+    g = int.from_bytes(image.read(1), byteorder="little")
+    r = int.from_bytes(image.read(1), byteorder="little")
+    return r, g, b
+
+
+def set_pixel_rgb(image: io.BytesIO, x_y_tuple: tuple[int, int], r_g_b_tuple: tuple[int, int, int]) -> None:
+    """
+    Helper function to set the RGB value of a particular pixel
+
+    :param image: The bmp bytes
+    :param x_y_tuple: An (x, y) tuple that represents the coordinates of a particular pixel
+    :param r_g_b_tuple: An (r, g, b) tuple that represents color to set pixel to
+    :returns: None
+    """
+    _seek_x_y(image, x_y_tuple)
+    image.write(r_g_b_tuple[2].to_bytes(length=1, byteorder="little"))
+    image.write(r_g_b_tuple[1].to_bytes(length=1, byteorder="little"))
+    image.write(r_g_b_tuple[0].to_bytes(length=1, byteorder="little"))
+
+
 def create_bmp(width, height):
     row_size = width * 3
     row_padding = 0
@@ -97,7 +188,28 @@ def change_pixel(image, clicked_coordinate, **kwargs):
 @export_filter
 def mark_middle(image, **kwargs):
     fpp, width, height, bpp, row_size, padding = get_info(image)
+    kwargs.pop("clicked_coordinate", "")
     change_pixel(image, (round(width / 2), round(height / 2)), **kwargs)
+
+
+@export_tool
+def say_hi(image, clicked_coordinate, color, **kwargs):
+    x, y = clicked_coordinate
+    set_pixel_rgb(image, (x, y), color)
+    set_pixel_rgb(image, (x, y - 2), color)
+    set_pixel_rgb(image, (x, y - 3), color)
+    set_pixel_rgb(image, (x - 4, y + 1), color)
+    set_pixel_rgb(image, (x - 4, y), color)
+    set_pixel_rgb(image, (x - 4, y - 1), color)
+    set_pixel_rgb(image, (x - 4, y - 2), color)
+    set_pixel_rgb(image, (x - 4, y - 3), color)
+    set_pixel_rgb(image, (x - 3, y - 1), color)
+
+    set_pixel_rgb(image, (x - 2, y + 1), color)
+    set_pixel_rgb(image, (x - 2, y), color)
+    set_pixel_rgb(image, (x - 2, y - 1), color)
+    set_pixel_rgb(image, (x - 2, y - 2), color)
+    set_pixel_rgb(image, (x - 2, y - 3), color)
 
 
 @export_filter

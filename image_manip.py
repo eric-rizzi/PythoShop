@@ -13,6 +13,26 @@ def mark_middle(image, color, **kwargs):
     set_pixel_rgb(image, (middle_x, middle_y), color)
 
 
+@export_tool
+def say_hi(image, clicked_coordinate, color, **kwargs):
+    x, y = clicked_coordinate
+    set_pixel_rgb(image, (x, y), color)
+    set_pixel_rgb(image, (x, y - 2), color)
+    set_pixel_rgb(image, (x, y - 3), color)
+    set_pixel_rgb(image, (x - 4, y + 1), color)
+    set_pixel_rgb(image, (x - 4, y), color)
+    set_pixel_rgb(image, (x - 4, y - 1), color)
+    set_pixel_rgb(image, (x - 4, y - 2), color)
+    set_pixel_rgb(image, (x - 4, y - 3), color)
+    set_pixel_rgb(image, (x - 3, y - 1), color)
+
+    set_pixel_rgb(image, (x - 2, y + 1), color)
+    set_pixel_rgb(image, (x - 2, y), color)
+    set_pixel_rgb(image, (x - 2, y - 1), color)
+    set_pixel_rgb(image, (x - 2, y - 2), color)
+    set_pixel_rgb(image, (x - 2, y - 3), color)
+
+
 @export_filter
 def mark_four_corners(image, color, **kwargs):
     h = get_height(image) - 1
