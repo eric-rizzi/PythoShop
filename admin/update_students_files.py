@@ -44,6 +44,7 @@ def copy_readonly_files(files: list[str], destination_folder: str) -> None:
 
 def get_base_test_files() -> list[str]:
     base_test_files = []
+    base_test_files += glob.glob("tests/__init__.py")
     base_test_files += glob.glob("tests/config.py")
     base_test_files += glob.glob("tests/test_base.py")
     base_test_files += glob.glob("tests/test_base2.py")
