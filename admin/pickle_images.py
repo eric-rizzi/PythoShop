@@ -85,6 +85,8 @@ if __name__ == "__main__":
     original_images: dict[str, bytes] = {}
 
     print("Starting pickling of original images.")
+    prep_expected_outputs_folder()
+
     for file_name in config.FILE_NAMES:
         file_name = file_name + ".bmp"
         file_path = os.path.join(config.IMAGES_FOLDER_PATH, file_name)
@@ -99,7 +101,6 @@ if __name__ == "__main__":
 
     # Pickle the expected output for each test/transformation
     print('Starting creating and pickling of "expected output" images')
-    prep_expected_outputs_folder()
 
     testSuite = unittest.defaultTestLoader.discover(".")
     for test in testSuite:
