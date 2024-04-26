@@ -5,4 +5,4 @@ import tests.test_base as test_base
 
 class Extension(test_base.TestBase, unittest.TestCase):
     manip_func_name = "negate_red"
-    test_weight = 1
+    test_weight = 3

@@ -5,4 +5,4 @@ import tests.test_base as test_base
 
 class Test(test_base.TestBase, unittest.TestCase):
     manip_func_name = "make_two_tone"
-    test_weight = 33
+    test_weight = 25
