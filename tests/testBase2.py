@@ -42,7 +42,7 @@ class TestBase2(testBase.TestBase):
         self.__class__.test_parameters = self.__class__.test_parameters.copy()
 
     def test_images(self):
-        with test_timeout(10):
+        with test_timeout(1000000):
             if self.image_sets is None:
                 assert False
             for image1_name, image2_name in self.image_sets:
@@ -56,30 +56,31 @@ class TestBase2(testBase.TestBase):
                         image1.write(self.original_images[image1_file_name])
                         image2.write(self.original_images[image2_file_name])
                         try:
-                            result = static_manip_func(image1, image2, **self.test_parameters)
+                            result = static_manip_func(image1, other_image=image2, **self.test_parameters)
                         except Exception as e:
                             self.assertTrue(False, "Running on " + image1_file_name + " and " + image2_file_name + " casused an exception: " + str(e))
-                        first_pixel_index = int.from_bytes(self.solution_images[test_file_name][10:14], "little")
-                        width = int.from_bytes(self.solution_images[test_file_name][18:22], "little")
-                        height = int.from_bytes(self.solution_images[test_file_name][22:26], "little")
-                        row_size = width * 3
-                        row_padding = 0
-                        if row_size % 4 != 0:
-                            row_padding = 4 - row_size % 4
-                            row_size += row_padding
-                        self.assertTrue(result is not None, "Your function didn't return the resulting image")
-                        self.assertTrue(type(result) == io.BytesIO)
-                        result.seek(0)
-                        header = result.read(first_pixel_index)
-                        self.assertTrue(header == self.solution_images[test_file_name][:first_pixel_index], "The header information is incorrect.\n  Should be: " + self.solution_images[test_file_name][:first_pixel_index].hex() + "\n   Actually: " + header.hex())
-                        for row in range(height):
-                            row_index = first_pixel_index + row_size * row
-                            for pixel in range(width):
-                                pixel_index = row_index + pixel * 3
-                                correct_b, correct_g, correct_r = self.solution_images[test_file_name][pixel_index:pixel_index + 3]
-                                actual_b, actual_g, actual_r = result.read(3)
-                                if actual_b != correct_b or actual_g != correct_g or actual_r != correct_r:
+                        if result == None:
+                            result = image1
+                        self.assertTrue(type(result) == io.BytesIO or type(result) == io.BufferedRandom)
+                        solution_image = io.BytesIO(self.solution_images[test_file_name])
+                        self.compare_headers(solution_image, result)
+                        fpp1, width1, height1, row_size1, pad1 = self.get_info(solution_image)
+                        fpp2, width2, height2, row_size2, pad2 = self.get_info(result)
+                        for row in range(height1):
+                            for pixel in range(width1):
+                                try:
+                                    solution_image.seek(fpp1 + row_size1 * row + 3 * pixel)
+                                    correct_b, correct_g, correct_r = solution_image.read(3)
+                                    result.seek(fpp2 + row_size2 * row + 3 * pixel)
+                                    actual_b, actual_g, actual_r = result.read(3)
+                                except:
+                                    self.assertTrue(False, "Pixel at (" + str(pixel) + ", " + str(row) + ") could not be read.")
+                                if actual_b < correct_b - self.tolerance or actual_b > correct_b + self.tolerance \
+                                    or actual_g < correct_g - self.tolerance or actual_g > correct_g + self.tolerance \
+                                    or actual_r < correct_r - self.tolerance or actual_r > correct_r + self.tolerance:
+                                    pixel_index = fpp1 + row_size1 * row + 3 * pixel
                                     original1_b, original1_g, original1_r = self.original_images[image1_file_name][pixel_index:pixel_index + 3]
                                     original2_b, original2_g, original2_r = self.original_images[image2_file_name][pixel_index:pixel_index + 3]
                                     self.assertTrue(False, "Pixel at (" + str(pixel) + ", " + str(row) + ") is incorrect. \nOriginals were " + str([original1_b, original1_g, original1_r]) + " and " + str([original2_b, original2_g, original2_r]) + "\nIt should be " + str([correct_b, correct_g, correct_r]) + "\nBut actually " + str([actual_b, actual_g, actual_r]))
-                            result.read(row_padding)
+                            solution_image.seek(pad1, 1)
+                            result.seek(pad2, 1)

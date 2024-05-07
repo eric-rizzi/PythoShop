@@ -9,3 +9,4 @@ admin*/
 *.zip
 *.tsv
 *.csv
+results/

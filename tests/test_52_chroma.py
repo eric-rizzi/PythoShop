@@ -9,3 +9,7 @@ class Test(testBase2.TestBase2, unittest.TestCase):
         ("evenC1", "evenC2"),
         ("oddC1", "oddC2"),  # requires padding
     ]
+
+    def __init__(self, test):
+        super().__init__(test)
+        self.__class__.test_parameters.update({"color": (0, 255, 0)})

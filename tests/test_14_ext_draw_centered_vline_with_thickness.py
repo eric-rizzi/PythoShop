@@ -3,14 +3,14 @@ import testBase
 
 
 class Extension(testBase.TestBase, unittest.TestCase):
-    manip_func_name = "mark_middle"
-    # Only use images that are odd in BOTH dimensions
+    manip_func_name = "draw_centered_vline"
+    test_weight = 5
+    # Only use images that have an absolute center
     image_sets = [
         ["pad1"],
         ["pad3"],
         ["odd"],
     ]
-    test_weight = 50
 
     def __init__(self, test):
         super().__init__(test)

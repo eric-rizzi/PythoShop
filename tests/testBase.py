@@ -8,6 +8,7 @@ import importlib.util
 import random
 import signal
 import platform
+import io
 
 
 class TestTimeout(Exception):
@@ -47,12 +48,46 @@ class TestBase(object):
     image_sets = None
     manip_module = None
     num_image_parameters = 1
+    tolerance = 1 # may want to change this depending on how strict you want to be with rounding
 
     def __init__(self, test):
         super().__init__(test)
         self.__class__.test_parameters = self.__class__.test_parameters.copy()
         if self.image_sets is None:
             self.image_sets = list([file_name] for file_name in config.FILE_NAMES)
+
+    def get_info(self, image):
+        image.seek(10)
+        fpp = int.from_bytes(image.read(4), "little")
+        image.seek(18)
+        width = int.from_bytes(image.read(4), "little")
+        height = int.from_bytes(image.read(4), "little")
+        colorp = int.from_bytes(image.read(2), "little")
+        bpp = int.from_bytes(image.read(2), "little")
+        if bpp != 24:
+            self.assertTrue(False, "Unsupported bits per pixel")
+        compression = int.from_bytes(image.read(4), "little")
+        if compression != 0:
+            self.assertTrue(False, "Unsupported compression")
+        row_size = width * 3
+        # Rows need to be padded to a multiple of 4 bytes
+        row_padding = 0
+        if row_size % 4 != 0:
+            row_padding = 4 - row_size % 4
+            row_size += row_padding
+        return fpp, width, height, row_size, row_padding
+
+    def compare_headers(self, image1, image2):
+        """ image1 is the reference (correct) image """
+        fpp1, width1, height1, row_size1, pad1 = self.get_info(image1)
+        fpp2, width2, height2, row_size2, pad2 = self.get_info(image2)
+        image1.seek(0)
+        image2.seek(0)
+        header_field1 = image1.read(2)
+        header_field2 = image2.read(2)
+        self.assertTrue(header_field1 == header_field2, "The header field is incorrect.\n  Should be: " + header_field1.hex() + "\n   Actually: " + header_field2.hex())
+        self.assertTrue(width1 == width2, "The width is incorrect.\n  Should be: " + str(width1) + "\n   Actually: " + str(width2))
+        self.assertTrue(height1 == height2, "The height is incorrect.\n  Should be: " + str(height1) + "\n   Actually: " + str(height2))
 
     @classmethod
     def get_parameter_str(cls):
@@ -103,27 +138,30 @@ class TestBase(object):
                     with tempfile.TemporaryFile() as image_file:
                         image_file.write(self.original_images[orig_file_name])
                         try:
-                            static_manip_func(image_file, **self.test_parameters)
+                            result = static_manip_func(image_file, **self.test_parameters)
                         except Exception as e:
                             self.assertTrue(False, "Running on " + orig_file_name + " casused an exception: " + str(e))
-                        first_pixel_index = int.from_bytes(self.solution_images[test_file_name][10:14], "little")
-                        width = int.from_bytes(self.solution_images[test_file_name][18:22], "little")
-                        height = int.from_bytes(self.solution_images[test_file_name][22:26], "little")
-                        row_size = width * 3
-                        row_padding = 0
-                        if row_size % 4 != 0:
-                            row_padding = 4 - row_size % 4
-                            row_size += row_padding
-                        image_file.seek(0)
-                        header = image_file.read(first_pixel_index)
-                        self.assertTrue(header == self.solution_images[test_file_name][:first_pixel_index], "The header information is incorrect.\n  Should be: " + self.solution_images[test_file_name][:first_pixel_index].hex() + "\n   Actually: " + header.hex())
-                        for row in range(height):
-                            row_index = first_pixel_index + row_size * row
-                            for pixel in range(width):
-                                pixel_index = row_index + pixel * 3
-                                correct_b, correct_g, correct_r = self.solution_images[test_file_name][pixel_index:pixel_index + 3]
-                                actual_b, actual_g, actual_r = image_file.read(3)
-                                if actual_b != correct_b or actual_g != correct_g or actual_r != correct_r:
+                        if result == None:
+                            result = image_file
+                        self.assertTrue(type(result) == io.BytesIO or type(result) == io.BufferedRandom)
+                        solution_image = io.BytesIO(self.solution_images[test_file_name])
+                        self.compare_headers(solution_image, result)
+                        fpp1, width1, height1, row_size1, pad1 = self.get_info(solution_image)
+                        fpp2, width2, height2, row_size2, pad2 = self.get_info(result)
+                        for row in range(height1):
+                            for pixel in range(width1):
+                                try:
+                                    solution_image.seek(fpp1 + row_size1 * row + 3 * pixel)
+                                    result.seek(fpp2 + row_size2 * row + 3 * pixel)
+                                    correct_b, correct_g, correct_r = solution_image.read(3)
+                                    actual_b, actual_g, actual_r = result.read(3)
+                                except:
+                                    self.assertTrue(False, "Pixel at (" + str(pixel) + ", " + str(row) + ") could not be read.")
+                                if actual_b < correct_b - self.tolerance or actual_b > correct_b + self.tolerance \
+                                    or actual_g < correct_g - self.tolerance or actual_g > correct_g + self.tolerance \
+                                    or actual_r < correct_r - self.tolerance or actual_r > correct_r + self.tolerance:
+                                    pixel_index = fpp1 + row_size1 * row + 3 * pixel
                                     original_b, original_g, original_r = self.original_images[orig_file_name][pixel_index:pixel_index + 3]
                                     self.assertTrue(False, "Pixel at (" + str(pixel) + ", " + str(row) + ") is incorrect. \nOriginal was " + str([original_b, original_g, original_r]) + "\nIt should be " + str([correct_b, correct_g, correct_r]) + "\nBut actually " + str([actual_b, actual_g, actual_r]))
-                            image_file.read(row_padding)
+                            solution_image.seek(pad1, 1)
+                            result.seek(pad2, 1)

@@ -11,4 +11,4 @@ class Extension(testBase2.TestBase2, unittest.TestCase):
 
     def __init__(self, test):
         super().__init__(test)
-        self.__class__.test_parameters.update({"clicked_coordinate": (20, 30), "color": (0, 255, 0), "extra": "5"})
+        self.__class__.test_parameters.update({"color": (0, 255, 0), "extra": "5"})

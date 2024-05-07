@@ -3,6 +3,7 @@ import ImageManip
 import unittest
 import tests.config as config
 import random
+import os
 
 if __name__ == '__main__':
     # Pickle up the originals
@@ -10,7 +11,7 @@ if __name__ == '__main__':
     pickle_file_name = "testOriginals.pickle"
     for file_name in config.FILE_NAMES:
         file_name = file_name + ".bmp"
-        file = open(file_name, "rb")
+        file = open(os.path.join("images", file_name), "rb")
         original_images[file_name] = file.read()
         print("Pickling: " + file_name + " in " + pickle_file_name)
         file.close()
@@ -40,12 +41,16 @@ if __name__ == '__main__':
             solution_file.write(original_images[original_file_names[0]+".bmp"])
             original_files.append(solution_file)
             solution_file.seek(0)
-            for original_file_name in original_file_names[1:]:
-                original_file_name = original_file_name + ".bmp"
-                original_file = open(original_file_name, "rb")
-                original_files.append(original_file)
+            other_image = None
+            if len(original_file_names) == 1:
+                pass
+            elif len(original_file_names) == 2:
+                original_file_name = original_file_names[1] + ".bmp"
+                other_image = open(os.path.join("images", original_file_name), "rb")
+            else:
+                raise(ValueError("Files for this test can be 1 or 2 files only"))
             testFunction = getattr(ImageManip, test_name)
-            result = testFunction(*original_files, **test_args)
+            result = testFunction(*original_files, other_image=other_image, **test_args)
             if result is not None:
                 solution_file.close()
                 solution_file = open(solution_file_name, "wb+")

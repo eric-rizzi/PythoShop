@@ -7,4 +7,4 @@ class Extension(testTool.Test, unittest.TestCase):
 
     def __init__(self, test):
         super().__init__(test)
-        self.__class__.test_parameters.update({"clicked_coordinate": (10, 10), "extra": "4"})
+        self.__class__.test_parameters.update({"clicked_coordinate": (1, 2), "extra": "4"})

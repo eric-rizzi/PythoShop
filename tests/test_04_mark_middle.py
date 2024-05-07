@@ -1,9 +1,10 @@
 import unittest
-import testTool
+import testBase
 
 
-class Test(testTool.Test, unittest.TestCase):
+class Test(testBase.TestBase, unittest.TestCase):
     manip_func_name = "mark_middle"
+    # Only use images that are odd in BOTH dimensions
     image_sets = [
         ["pad1"],
         ["pad3"],

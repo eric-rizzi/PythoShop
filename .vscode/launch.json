@@ -9,7 +9,8 @@
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "justMyCode": false
         },
         {
             "name": "Install prereqs",
@@ -31,6 +32,18 @@
             "program": "PythoShop.py",
             "console": "integratedTerminal",
             "justMyCode": true
+        },
+        {
+            "name": "Gen solution",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pickleImages",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/tests",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
         },
         {
             "name": "Tests",
@@ -73,13 +86,13 @@
             }
         },
         {
-            "name": "Gen solution",
+            "name": "Plagiarism check",
             "type": "debugpy",
             "request": "launch",
-            "module": "pickleImages",
+            "module": "plagiarismCheck",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "cwd": "${workspaceFolder}/tests",
+            "cwd": "${workspaceFolder}/admin",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
             }

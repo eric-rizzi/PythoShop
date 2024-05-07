@@ -13,8 +13,9 @@ import importlib.util
 import time
 from kivy.uix.colorpicker import ColorPicker
 from kivy.core.window import Window
-from tests.config import DEFAULT_STARTING_IMAGE_PATH
+import math
 
+DEFAULT_STARTING_IMAGE_PATH = "uchicago.bmp"
 
 class NoImageError(Exception):
     pass
