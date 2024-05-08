@@ -1,14 +1,15 @@
-import unittest
-import pickle
-import tempfile
-import inspect
-import tests.config as config
-import os
 import importlib.util
+import inspect
+import io
+import os
+import pickle
+import platform
 import random
 import signal
-import platform
-import io
+import tempfile
+import unittest
+
+import tests.config as config
 
 
 class TestTimeoutException(Exception):
@@ -18,7 +19,7 @@ class TestTimeoutException(Exception):
 class TestTimeout:
     def __init__(self, seconds, error_message=None):
         if error_message is None:
-            error_message = 'test timed out after {}s.'.format(seconds)
+            error_message = "test timed out after {}s.".format(seconds)
             self.seconds = seconds
             self.error_message = error_message
 
@@ -38,17 +39,14 @@ class TestTimeout:
 class TestBase:
     original_images = {}
     solution_images = {}
-    test_parameters = {
-        "color": (238, 0, 119),
-        "extra": "extra parameters..."
-    }
+    test_parameters = {"color": (238, 0, 119), "extra": "extra parameters..."}
     manip_func_name = None
     manip_func = None
     test_weight = 0
     image_sets = None
     manip_module = None
     num_image_parameters = 1
-    tolerance = 1 # may want to change this depending on how strict you want to be with rounding
+    tolerance = 1  # may want to change this depending on how strict you want to be with rounding
 
     def __init__(self, test):
         super().__init__(test)
@@ -78,14 +76,16 @@ class TestBase:
         return fpp, width, height, row_size, row_padding
 
     def compare_headers(self, image1, image2):
-        """ image1 is the reference (correct) image """
+        """image1 is the reference (correct) image"""
         fpp1, width1, height1, row_size1, pad1 = self.get_info(image1)
         fpp2, width2, height2, row_size2, pad2 = self.get_info(image2)
         image1.seek(0)
         image2.seek(0)
         header_field1 = image1.read(2)
         header_field2 = image2.read(2)
-        self.assertTrue(header_field1 == header_field2, "The header field is incorrect.\n  Should be: " + header_field1.hex() + "\n   Actually: " + header_field2.hex())
+        self.assertTrue(
+            header_field1 == header_field2, "The header field is incorrect.\n  Should be: " + header_field1.hex() + "\n   Actually: " + header_field2.hex()
+        )
         self.assertTrue(width1 == width2, "The width is incorrect.\n  Should be: " + str(width1) + "\n   Actually: " + str(width2))
         self.assertTrue(height1 == height2, "The height is incorrect.\n  Should be: " + str(height1) + "\n   Actually: " + str(height2))
 
@@ -120,7 +120,14 @@ class TestBase:
             positional_args = positional_args[:-1]
         # what should be left is just the image parameters
         if len(positional_args) < cls.num_image_parameters:
-            raise unittest.SkipTest(cls.__module__ + ": function " + cls.manip_func_name + "() does not take " + str(len(cls.test_parameters) + cls.num_image_parameters) + " parameters.")
+            raise unittest.SkipTest(
+                cls.__module__
+                + ": function "
+                + cls.manip_func_name
+                + "() does not take "
+                + str(len(cls.test_parameters) + cls.num_image_parameters)
+                + " parameters."
+            )
         pickled_solutions_file_name = cls.__module__ + ".pickle"
         pickled_solutions = open(pickled_solutions_file_name, "rb")
         cls.solution_images = pickle.load(pickled_solutions)
@@ -143,7 +150,7 @@ class TestBase:
                             self.assertTrue(False, "Running on " + orig_file_name + " casused an exception: " + str(e))
                         if result == None:
                             result = image_file
-                        self.assertTrue(type(result) == io.BytesIO or type(result) == io.BufferedRandom)
+                        self.assertTrue(type(result) == io.BytesIO or type(result) == io.BufferedRandom or type(result) == tempfile._TemporaryFileWrapper)
                         solution_image = io.BytesIO(self.solution_images[test_file_name])
                         self.compare_headers(solution_image, result)
                         fpp1, width1, height1, row_size1, pad1 = self.get_info(solution_image)
@@ -157,11 +164,28 @@ class TestBase:
                                     actual_b, actual_g, actual_r = result.read(3)
                                 except:
                                     self.assertTrue(False, "Pixel at (" + str(pixel) + ", " + str(row) + ") could not be read.")
-                                if actual_b < correct_b - self.tolerance or actual_b > correct_b + self.tolerance \
-                                    or actual_g < correct_g - self.tolerance or actual_g > correct_g + self.tolerance \
-                                    or actual_r < correct_r - self.tolerance or actual_r > correct_r + self.tolerance:
+                                if (
+                                    actual_b < correct_b - self.tolerance
+                                    or actual_b > correct_b + self.tolerance
+                                    or actual_g < correct_g - self.tolerance
+                                    or actual_g > correct_g + self.tolerance
+                                    or actual_r < correct_r - self.tolerance
+                                    or actual_r > correct_r + self.tolerance
+                                ):
                                     pixel_index = fpp1 + row_size1 * row + 3 * pixel
-                                    original_b, original_g, original_r = self.original_images[orig_file_name][pixel_index:pixel_index + 3]
-                                    self.assertTrue(False, "Pixel at (" + str(pixel) + ", " + str(row) + ") is incorrect. \nOriginal was " + str([original_b, original_g, original_r]) + "\nIt should be " + str([correct_b, correct_g, correct_r]) + "\nBut actually " + str([actual_b, actual_g, actual_r]))
+                                    original_b, original_g, original_r = self.original_images[orig_file_name][pixel_index : pixel_index + 3]
+                                    self.assertTrue(
+                                        False,
+                                        "Pixel at ("
+                                        + str(pixel)
+                                        + ", "
+                                        + str(row)
+                                        + ") is incorrect. \nOriginal was "
+                                        + str([original_b, original_g, original_r])
+                                        + "\nIt should be "
+                                        + str([correct_b, correct_g, correct_r])
+                                        + "\nBut actually "
+                                        + str([actual_b, actual_g, actual_r]),
+                                    )
                             solution_image.seek(pad1, 1)
                             result.seek(pad2, 1)
