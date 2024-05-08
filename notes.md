@@ -12,10 +12,6 @@
 * 
 
 # New tests
-* mark_middle
-* draw_border: lines
-* fill (with other color)
-* make_gray_tool: grayscale
 * morph: fade
 
 # Checks

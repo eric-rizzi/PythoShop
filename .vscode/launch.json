@@ -5,10 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Current File",
+            "name": "Distribute files",
             "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
+            "program": "admin/updateStudentsFiles.py",
             "console": "integratedTerminal",
             "justMyCode": false
         },

@@ -15,7 +15,7 @@ from kivy.uix.colorpicker import ColorPicker
 from kivy.core.window import Window
 import math
 
-DEFAULT_STARTING_IMAGE_PATH = "uchicago.bmp"
+DEFAULT_STARTING_IMAGE_PATH = "images/uchicago.bmp"
 
 class NoImageError(Exception):
     pass
