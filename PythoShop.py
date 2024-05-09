@@ -8,6 +8,7 @@ from io import BytesIO
 from kivy.app import App
 from kivy.core.image import Image as CoreImage
 from kivy.core.window import Window
+from kivy.input.providers.mouse import MouseMotionEvent
 from kivy.uix.button import Button
 from kivy.uix.colorpicker import ColorPicker
 from kivy.uix.dropdown import DropDown
@@ -57,14 +58,14 @@ def _is_primary_tab_selected() -> bool:
 
 def _is_secondary_tab_selected() -> bool:
     """
-    Determine if the "primary" tab is selected in the Kivy window.
+    Determine if the "secondary" tab is selected in the Kivy window.
 
-    :returns: T/F if primary tab is selected
+    :returns: T/F if secondary tab is selected
     """
     return bool(PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab)
 
 
-def _get_current_image():
+def _get_current_image() -> tuple[typing.Optional[UixImage], typing.Optional[BytesIO], typing.Any]:
     """
     Get the data associated with the currently loaded image
 
@@ -84,6 +85,8 @@ def _select_color(x: int, y: int) -> None:  # sourcery skip: merge-else-if-into-
     :param y: The y value of the pixel to sample
     :returns: None
     """
+    assert PythoShopApp._color_picker
+
     cimage, cbytes, cscatter = _get_current_image()
     if cbytes:
         img = Image.open(cbytes)
@@ -104,6 +107,77 @@ def _get_image_bytes(file_name: str) -> BytesIO:
         img.close()
 
     return current_bytes
+
+
+def _get_chosen_color() -> tuple[int, int, int]:
+    """
+    Get currently selected color in RGB format
+
+    :returns: RBG tuple
+    """
+    return (
+        int(PythoShopApp._root.color_button.background_color[0] * 255),
+        int(PythoShopApp._root.color_button.background_color[1] * 255),
+        int(PythoShopApp._root.color_button.background_color[2] * 255),
+    )
+
+
+def _get_extra_text() -> str:
+    """
+    Get text in the "extra parameters..." box
+
+    :returns: String that is inside the box
+    """
+    return PythoShopApp._root.extra_input.text
+
+
+def _is_touch_in_image(cimage: UixImage, event: MouseMotionEvent, cscatter) -> bool:
+    if not cimage.parent.collide_point(*event.pos):
+        return False
+    else:
+        lr_space = (cimage.width - cimage.norm_image_size[0]) / 2  # empty space in Image widget left and right of actual image
+        tb_space = (cimage.height - cimage.norm_image_size[1]) / 2  # empty space in Image widget above and below actual image
+        pixel_x = event.x - lr_space - cscatter.x  # x coordinate of touch measured from lower left of actual image
+        pixel_y = event.y - tb_space - cscatter.y  # y coordinate of touch measured from lower left of actual image
+        if pixel_x < 0 or pixel_y < 0:
+            return False
+        elif pixel_x >= cimage.norm_image_size[0] or pixel_y >= cimage.norm_image_size[1]:
+            return False
+        else:
+            return True
+
+
+def _handle_touch_in_image(cimage: UixImage, event: MouseMotionEvent, cscatter) -> None:
+    lr_space = (cimage.width - cimage.norm_image_size[0]) / 2  # empty space in Image widget left and right of actual image
+    tb_space = (cimage.height - cimage.norm_image_size[1]) / 2  # empty space in Image widget above and below actual image
+    pixel_x = event.x - lr_space - cscatter.x  # x coordinate of touch measured from lower left of actual image
+    pixel_y = event.y - tb_space - cscatter.y  # y coordinate of touch measured from lower left of actual image
+
+    assert pixel_x >= 0 and pixel_y >= 0 and pixel_x < cimage.norm_image_size[0] and pixel_y < cimage.norm_image_size[1]
+
+    # scale coordinates to actual pixels of the Image source
+    actual_x = int(pixel_x * cimage.texture_size[0] / cimage.norm_image_size[0])
+    actual_y = int(pixel_y * cimage.texture_size[1] / cimage.norm_image_size[1])
+
+    # Note: can't call your manip functions "_select_"
+    if PythoShopApp._tool_function.__name__[:8] == "_select_":
+        PythoShopApp._tool_function(actual_x, actual_y)
+    else:
+        run_manip_function(PythoShopApp._tool_function, clicked_coordinate=(actual_x, actual_y))
+
+
+def _write_image_to_file_system(bytes: BytesIO) -> None:
+    """
+    Writes given bytes to the file system as a bitmap
+
+    :param bytes: Bytes of bitmap to write to the filesystem
+    :returns: None
+    """
+    bytes.seek(0)
+    new_image_file_name = os.path.join(os.path.expanduser("~"), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S") + ".bmp")
+    new_image_file = open(new_image_file_name, "wb")
+    new_image_file.write(bytes.read())
+    new_image_file.close()
 
 
 def check_bmp_integrity(image: BytesIO) -> None:
@@ -154,18 +228,12 @@ def run_manip_function(func: typing.Callable, **kwargs) -> None:
         raise NoImageError("The currently selected tab doesn't have an image loaded into it")
 
     try:
-        chosen_color = (
-            int(PythoShopApp._root.color_button.background_color[0] * 255),
-            int(PythoShopApp._root.color_button.background_color[1] * 255),
-            int(PythoShopApp._root.color_button.background_color[2] * 255),
-        )
-        extra_input = PythoShopApp._root.extra_input.text
         bytes1.seek(0)
+        kwargs["color"] = _get_chosen_color()
+        kwargs["extra"] = _get_extra_text()
         if bytes2:
             bytes2.seek(0)
             kwargs["other_image"] = bytes2
-        kwargs["color"] = chosen_color
-        kwargs["extra"] = extra_input
         result = func(bytes1, **kwargs)
         if result != None:  # Something was returned, make sure it was an image file
             if result.__class__ != BytesIO:
@@ -204,12 +272,12 @@ def run_manip_function(func: typing.Callable, **kwargs) -> None:
 
 
 class FileChooserDialog(Widget):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs) -> None:
         super().__init__()
         if "rootpath" in kwargs:
             self.file_chooser.rootpath = kwargs["rootpath"]
 
-    def open(self, file_name):
+    def open(self, file_name: list[str]) -> None:
         if len(file_name) != 1:
             return
 
@@ -287,54 +355,31 @@ class PhotoShopWidget(Widget):
             bytes = PythoShopApp._bytes2
 
         if bytes:
-            bytes.seek(0)
-            new_image_file_name = os.path.join(os.path.expanduser("~"), "Desktop", "PythoShop " + time.strftime("%Y-%m-%d at %H.%M.%S") + ".bmp")
-            new_image_file = open(new_image_file_name, "wb")
-            new_image_file.write(bytes.read())
-            new_image_file.close()
+            _write_image_to_file_system(bytes)
 
-    def apply_tool(self, event, callback):
+    def apply_tool(self, event: MouseMotionEvent, callback: typing.Callable) -> bool:
         cimage, cbytes, cscatter = _get_current_image()
-        if cimage and PythoShopApp._tool_function:
-            if not cimage.parent.collide_point(*event.pos):
-                return callback(event)
-            else:
-                lr_space = (cimage.width - cimage.norm_image_size[0]) / 2  # empty space in Image widget left and right of actual image
-                tb_space = (cimage.height - cimage.norm_image_size[1]) / 2  # empty space in Image widget above and below actual image
-                pixel_x = event.x - lr_space - cscatter.x  # x coordinate of touch measured from lower left of actual image
-                pixel_y = event.y - tb_space - cscatter.y  # y coordinate of touch measured from lower left of actual image
-                if pixel_x < 0 or pixel_y < 0:
-                    return callback(event)
-                elif pixel_x >= cimage.norm_image_size[0] or pixel_y >= cimage.norm_image_size[1]:
-                    return callback(event)
-                else:
-                    # scale coordinates to actual pixels of the Image source
-                    actual_x = int(pixel_x * cimage.texture_size[0] / cimage.norm_image_size[0])
-                    actual_y = int(pixel_y * cimage.texture_size[1] / cimage.norm_image_size[1])
-                    # Note: can't call your manip functions "_select_"
-                    if PythoShopApp._tool_function.__name__[:8] == "_select_":
-                        PythoShopApp._tool_function(actual_x, actual_y)
-                    else:
-                        run_manip_function(PythoShopApp._tool_function, clicked_coordinate=(actual_x, actual_y))
-                    return True
+        if cimage and PythoShopApp._tool_function and _is_touch_in_image(cimage, event, cscatter):
+            _handle_touch_in_image(cimage, event, cscatter)
+            return True
         else:
             return callback(event)
 
-    def on_touch_down(self, touch):
+    def on_touch_down(self, touch: MouseMotionEvent) -> None:
         self.apply_tool(touch, super().on_touch_down)
 
-    def on_touch_move(self, movement):
+    def on_touch_move(self, movement: MouseMotionEvent) -> None:
         self.apply_tool(movement, super().on_touch_move)
 
 
 class PythoShopApp(App):
-    _image1 = None
-    _bytes1 = None
-    _image2 = None
-    _bytes2 = None
-    _root = None
-    _tool_function = None
-    _color_picker = None
+    _image1: typing.Optional[UixImage] = None
+    _bytes1: typing.Optional[BytesIO] = None
+    _image2: typing.Optional[UixImage] = None
+    _bytes2: typing.Optional[BytesIO] = None
+    _root: typing.Any = None
+    _tool_function: typing.Any = None
+    _color_picker: typing.Optional[ColorPicker] = None
     _first_color = True
 
     def on_color(self, value):
