@@ -1,6 +1,5 @@
-import os
-import subprocess
 import sys
+import typing
 import unittest
 
 
@@ -27,11 +26,6 @@ def dummyRun(
     universal_newlines=None,
 ):
     raise RuntimeError("You should not be calling the subprocess.run function within your manipulation functions (only in __main__)")
-
-
-# Disable certain modules so students don't get confused
-sys.modules["subprocess"].run = dummyRun
-sys.modules["builtins"].input = dummyInput
 
 
 class TestResult(unittest.TextTestResult):
@@ -66,11 +60,24 @@ class TestResult(unittest.TextTestResult):
                 self.points_total += skipped_class.test_weight
 
 
-if __name__ == "__main__":
-    testSuite = unittest.defaultTestLoader.discover("tests")
+def get_test_suite_results(*, pattern: typing.Optional[str] = None) -> TestResult:
+    if pattern is None:
+        pattern = "test*.py"
+    else:
+        pattern = f"test*{pattern}*py"
+
+    testSuite = unittest.defaultTestLoader.discover("tests", pattern=pattern)
     testProgram = unittest.TextTestRunner(stream=sys.stdout, verbosity=2)
     testProgram.resultclass = TestResult
-    testResults = testProgram.run(testSuite)
+    test_suite_results = testProgram.run(testSuite)
+    return test_suite_results
+
+
+if __name__ == "__main__":
+    # Disable certain modules so students don't get confused
+    sys.modules["subprocess"].run = dummyRun
+    sys.modules["builtins"].input = dummyInput
+
     print("")
     print("Grade Breakdown")
     print("======================================================================")
@@ -79,10 +86,12 @@ if __name__ == "__main__":
     tests_passed = []
     tests_partial = []
     tests_failed = []
-    for test in testResults.tests:
+
+    test_suite_results = get_test_suite_results()
+    for test in test_suite_results.tests:
         print(f"Running test {test}")
         num_sub_tests = len(test.image_sets)
-        sub_failures = [x for x in testResults.failures if x[0].test_case == test]
+        sub_failures = [x for x in test_suite_results.failures if x[0].test_case == test]
         num_sub_failures = len(sub_failures)
         num_sub_success = num_sub_tests - num_sub_failures
         percentage = 0
@@ -101,8 +110,8 @@ if __name__ == "__main__":
         points_earned += points
         print(" " * (3 - len(percentage_str)) + percentage_str + "% " + str(test.__module__) + " (" + str(round(points, 1)) + " points)")
 
-    points_total = int(1.15 * testResults.points_total)
-    for skip in testResults.skipped:
+    points_total = int(1.15 * test_suite_results.points_total)
+    for skip in test_suite_results.skipped:
         print("Skipped " + skip[1])
 
     print("")
