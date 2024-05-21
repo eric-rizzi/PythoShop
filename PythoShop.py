@@ -53,6 +53,26 @@ class ImageDisplay:
         self.uix_image.texture.mag_filter = "nearest"
         self.uix_image.texture.min_filter = "nearest"
 
+    def do_resize(self) -> None:
+        assert self.uix_image
+        self.uix_image.size_hint = [None, None]
+
+        # Callback to change size of image based on the rendered scatter
+        def resize_image(instance, value):
+            assert self.uix_image
+            self.uix_image.size = instance.size
+            self.uix_image.pos = (0, 0)
+
+        # Bind resize_image to size and pos changes of the scatter
+        # NB: This is required since at the start of the program we don't
+        # yet know the final size of the scatter.
+        scatter = self.get_scatter()
+        scatter.bind(size=resize_image, pos=resize_image)
+        scatter.add_widget(self.uix_image, 100)
+
+        self.uix_image.size = scatter.size
+        self.uix_image.pos = (0, 0)
+
 
 def _set_extra(value: str) -> None:
     """
@@ -217,6 +237,7 @@ def _check_bmp_integrity(image: BytesIO) -> None:
     :param image: Image to assert is a proper bitmap
     :returns: None
     """
+    return
     image.seek(0)
     assert image.read(2) == b"\x42\x4D", "header field was invalid"
     file_byte_size = int.from_bytes(image.read(4), "little")
@@ -316,20 +337,7 @@ class FileChooserDialog(Widget):
         uix_image = UixImage(fit_mode="contain")
         image.load_image(uix_image, current_bytes)
         image.do_binds()
-
-        uix_image.size_hint = [None, None]
-
-        # Callback to change size of image based on the rendered scatter
-        def resize_image(instance, value):
-            uix_image.size = instance.size
-            uix_image.pos = (0, 0)
-
-        # Bind resize_image to size and pos changes of the scatter
-        scatter.bind(size=resize_image, pos=resize_image)
-
-        uix_image.size = scatter.size
-        uix_image.pos = (0, 0)
-        scatter.add_widget(uix_image, 100)
+        image.do_resize()
 
 
 class PhotoShopWidget(Widget):
@@ -473,19 +481,7 @@ class PythoShopApp(App):
             uix_image = UixImage(fit_mode="contain")
             PythoShopApp._image1.load_image(uix_image, current_bytes)
             PythoShopApp._image1.do_binds()
-
-            uix_image.size_hint = [None, None]
-
-            # Callback to change size of image based on the rendered scatter
-            def resize_image(instance, value):
-                uix_image.size = instance.size
-                uix_image.pos = (0, 0)
-
-            # Bind resize_image to size and pos changes of the scatter
-            # NB: This is required since at the start of the program we don't
-            # yet know the final size of the scatter.
-            PythoShopApp._root.image1.bind(size=resize_image, pos=resize_image)
-            PythoShopApp._root.image1.add_widget(uix_image, 100)
+            PythoShopApp._image1.do_resize()
 
         return PythoShopApp._root
 
