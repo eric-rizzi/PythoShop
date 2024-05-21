@@ -19,7 +19,7 @@ from PIL import Image
 
 from ImageManip import *
 
-DEFAULT_STARTING_IMAGE_PATH = "images/uchicago.bmp"
+DEFAULT_STARTING_PRIMARY_IMAGE_PATH = "images/uchicago.bmp"
 
 
 class NoImageError(Exception):
@@ -87,7 +87,7 @@ def _select_color(x: int, y: int) -> None:  # sourcery skip: merge-else-if-into-
     """
     assert PythoShopApp._color_picker
 
-    cimage, cbytes, cscatter = _get_current_image()
+    _, cbytes, _ = _get_current_image()
     if cbytes:
         img = Image.open(cbytes)
         r, g, b = img.getpixel((x, img.height - 1 - y))
@@ -181,9 +181,16 @@ def _write_image_to_file_system(bytes: BytesIO) -> None:
 
 
 def check_bmp_integrity(image: BytesIO) -> None:
+    """
+    Check (assert) that all the properties of a BitMap image are correct
+
+    :param image: Image to assert is a proper bitmap
+    :returns: None
+    """
     image.seek(0)
     assert image.read(2) == b"\x42\x4D", "header field was invalid"
     file_byte_size = int.from_bytes(image.read(4), "little")
+
     image.seek(10)
     first_pixel_offset = int.from_bytes(image.read(4), "little")
     header_size = int.from_bytes(image.read(4), "little")  # should be fpp - 14
@@ -192,6 +199,7 @@ def check_bmp_integrity(image: BytesIO) -> None:
     color_planes = int.from_bytes(image.read(2), "little")
     assert color_planes == 1, "color planes should be 1"
     bits_per_pixel = int.from_bytes(image.read(2), "little")
+
     bits_per_pixel_possibilities = [1, 4, 8, 16, 24, 32]
     assert bits_per_pixel in bits_per_pixel_possibilities, (
         "bits per pixel is set to " + str(bits_per_pixel) + " which is not one of the allowed options: " + ", ".join(bits_per_pixel_possibilities)
@@ -204,6 +212,7 @@ def check_bmp_integrity(image: BytesIO) -> None:
     row_byte_size = bytes_per_row + padding_bytes
     theoretical_file_size = first_pixel_offset + row_byte_size * pixel_height
     assert file_byte_size == theoretical_file_size, "file size is incorrect"
+
     compression = int.from_bytes(image.read(4), "little")
     assert compression == 0, "PythoShop doesn't support images with compression"
     pixel_data_byte_size = int.from_bytes(image.read(4), "little")
@@ -332,7 +341,7 @@ class FileChooserDialog(Widget):
 class PhotoShopWidget(Widget):
     _file_chooser_popup = None
 
-    def toggle_color(self):
+    def toggle_color(self) -> None:
         if PythoShopApp._color_picker.is_visible:
             PythoShopApp._root.children[0].remove_widget(PythoShopApp._color_picker)
             PythoShopApp._color_picker.is_visible = False
@@ -342,12 +351,12 @@ class PhotoShopWidget(Widget):
             PythoShopApp._color_picker.is_visible = True
             PythoShopApp._root.color_button.text = "Set Color"
 
-    def load_image(self):
+    def load_image(self) -> None:
         if not PhotoShopWidget._file_chooser_popup:
             PhotoShopWidget._file_chooser_popup = Popup(title="Choose an image", content=FileChooserDialog(rootpath=os.path.expanduser("~")))
         PhotoShopWidget._file_chooser_popup.open()
 
-    def save_image(self):
+    def save_image(self) -> None:
         bytes = None
         if _is_primary_tab_selected() and PythoShopApp._image1:
             bytes = PythoShopApp._bytes1
@@ -382,7 +391,13 @@ class PythoShopApp(App):
     _color_picker: typing.Optional[ColorPicker] = None
     _first_color = True
 
-    def on_color(self, value):
+    def on_color(self, value: list[int]) -> None:
+        """
+        Callback method to retrieve colors for kivy's ColorPicker object
+
+        :param value: The color currently selected in rgba format
+        :returns: None
+        """
         my_value = value.copy()  # we ignore the alpha chanel
         my_value[3] = 1
         PythoShopApp._root.color_button.background_normal = ""
@@ -391,15 +406,16 @@ class PythoShopApp(App):
             PythoShopApp._root.color_button.color = [0, 0, 0, 1]
         else:
             PythoShopApp._root.color_button.color = [1, 1, 1, 1]
+
         if not PythoShopApp._first_color:
             PythoShopApp._root.color_button.text = "Set Color"
         else:
             PythoShopApp._first_color = False
 
-    def _on_file_drop(self, window, file_path):
+    def _on_file_drop(self, window, file_path: str) -> None:
         PythoShopApp._root.extra_input.text = file_path
 
-    def build(self):
+    def build(self) -> None:
         Window.bind(on_dropfile=self._on_file_drop)
         PythoShopApp._root = PhotoShopWidget()
         # Find the functions that can be run
@@ -460,8 +476,8 @@ class PythoShopApp(App):
         except SyntaxError:
             print("Error: ImageManip.py has a syntax error and can't be executed")
 
-        if os.path.exists(DEFAULT_STARTING_IMAGE_PATH):
-            current_bytes = _get_image_bytes(DEFAULT_STARTING_IMAGE_PATH)
+        if os.path.exists(DEFAULT_STARTING_PRIMARY_IMAGE_PATH):
+            current_bytes = _get_image_bytes(DEFAULT_STARTING_PRIMARY_IMAGE_PATH)
             current_bytes.seek(0)
             cimg = CoreImage(current_bytes, ext="bmp")
 
