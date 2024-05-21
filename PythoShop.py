@@ -20,6 +20,7 @@ from PIL import Image
 from ImageManip import *
 
 DEFAULT_STARTING_PRIMARY_IMAGE_PATH = "images/uchicago.bmp"
+DEFAULT_STARTING_SECONDARY_IMAGE_PATH = "images/small_bear.bmp"
 
 
 class NoImageError(Exception):
@@ -237,7 +238,6 @@ def _check_bmp_integrity(image: BytesIO) -> None:
     :param image: Image to assert is a proper bitmap
     :returns: None
     """
-    return
     image.seek(0)
     assert image.read(2) == b"\x42\x4D", "header field was invalid"
     file_byte_size = int.from_bytes(image.read(4), "little")
@@ -482,6 +482,16 @@ class PythoShopApp(App):
             PythoShopApp._image1.load_image(uix_image, current_bytes)
             PythoShopApp._image1.do_binds()
             PythoShopApp._image1.do_resize()
+
+        if os.path.exists(DEFAULT_STARTING_SECONDARY_IMAGE_PATH):
+            current_bytes = _get_image_bytes(DEFAULT_STARTING_SECONDARY_IMAGE_PATH)
+            current_bytes.seek(0)
+
+            # Create a Kivy Image widget for the loaded image
+            uix_image = UixImage(fit_mode="contain")
+            PythoShopApp._image2.load_image(uix_image, current_bytes)
+            PythoShopApp._image2.do_binds()
+            PythoShopApp._image2.do_resize()
 
         return PythoShopApp._root
 
