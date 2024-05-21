@@ -9,6 +9,7 @@ import signal
 import tempfile
 import typing
 import unittest
+from io import BytesIO
 
 import tests.config as config
 
@@ -56,7 +57,7 @@ class TestBase:
     expected_image: typing.Optional[bytes] = None
     failing_image: typing.Optional[bytes] = None
 
-    def __init__(self, test) -> None:
+    def __init__(self, test: str) -> None:
         super().__init__(test)
         self.__class__.test_parameters = self.__class__.test_parameters.copy()
         if self.image_sets is None:
@@ -73,7 +74,7 @@ class TestBase:
             args_name += "_" + param + "_" + str(value)
         return args_name
 
-    def get_info(self, image):
+    def get_info(self, image: BytesIO) -> None:
         image.seek(10)
         fpp = int.from_bytes(image.read(4), "little")
         image.seek(18)
@@ -94,7 +95,7 @@ class TestBase:
             row_size += row_padding
         return fpp, width, height, row_size, row_padding
 
-    def compare_headers(self, image1, image2):
+    def compare_headers(self, image1: BytesIO, image2: BytesIO) -> None:
         """image1 is the reference (correct) image"""
         fpp1, width1, height1, row_size1, pad1 = self.get_info(image1)
         fpp2, width2, height2, row_size2, pad2 = self.get_info(image2)

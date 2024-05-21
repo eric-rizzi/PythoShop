@@ -1,0 +1,55 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+    branches:
+      - '**'
+
+jobs:
+  lint:
+    name: Run Linters
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          pip3 install black isort
+      - name: Run Black
+        run: black --line-length 160 --check . || true
+      - name: Run isort
+        run: isort -l 160 --profile black --check-only . || true
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libmtdev-dev xvfb  # needed by kivy for display-mocking
+          python3 -m pip install --upgrade pip
+          pip3 install pytest kivy pillow
+      - name: Run Pytest
+        run: |
+          Xvfb :99 -screen 0 1024x768x16 &
+          sleep 3  # Ensure Xvfb has time to start
+          export DISPLAY=:99
+          touch ImageManip.py
+          python3 -m pytest -s -vv unit_tests
+
