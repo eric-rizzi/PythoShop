@@ -214,12 +214,12 @@ def say_hi(image, clicked_coordinate, color, **kwargs):
 
 @export_filter
 def mark_four_corners(image, color, **kwargs):
-    h = get_height(image) - 1
-    w = get_width(image) - 1
+    h = get_height(image)
+    w = get_width(image)
     set_pixel_rgb(image, (0, 0), color)
-    set_pixel_rgb(image, (0, h), color)
-    set_pixel_rgb(image, (w, 0), color)
-    set_pixel_rgb(image, (w, h), color)
+    set_pixel_rgb(image, (0, h - 1), color)
+    set_pixel_rgb(image, (w - 1, 0), color)
+    set_pixel_rgb(image, (w - 1, h - 1), color)
 
 
 @export_filter
