@@ -67,6 +67,18 @@ def draw_t(image, clicked_coordinate, color, **kwargs):
 
 
 @export_tool
+def draw_rainbox(image, clicked_coordinate, color, **kwargs):
+    x, y = clicked_coordinate
+    set_pixel_rgb(image, (x - 2, y - 2), (255, 0, 0))
+    set_pixel_rgb(image, (x - 2, y - 1), (255, 127, 0))
+    set_pixel_rgb(image, (x - 1, y), (255, 255, 0))
+    set_pixel_rgb(image, (x, y), (0, 255, 0))
+    set_pixel_rgb(image, (x + 1, y), (0, 0, 255))
+    set_pixel_rgb(image, (x + 2, y - 1), (75, 0, 130))
+    set_pixel_rgb(image, (x + 2, y - 2), (148, 0, 211))
+
+
+@export_tool
 def draw_x(image, clicked_coordinate, color, **kwargs):
     x, y = clicked_coordinate
     set_pixel_rgb(image, (x, y), color)
