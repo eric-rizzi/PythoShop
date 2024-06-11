@@ -1,4 +1,5 @@
 import unittest
+
 import testBase
 
 
@@ -10,7 +11,7 @@ class Extension(testBase.TestBase, unittest.TestCase):
         ["pad3"],
         ["odd"],
     ]
-    test_weight = 50
+    test_weight = 1
 
     def __init__(self, test):
         super().__init__(test)

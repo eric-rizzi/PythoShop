@@ -1,4 +1,5 @@
 import unittest
+
 import testTool
 
 
@@ -12,7 +13,7 @@ class Extension(testTool.Test, unittest.TestCase):
         ["even"],
         ["bmpV1"],
     ]
-    test_weight = 50
+    test_weight = 5
 
     def __init__(self, test):
         super().__init__(test)
