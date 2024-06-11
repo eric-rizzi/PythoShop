@@ -9,3 +9,4 @@ ImageManip*.py
 *.tsv
 *.csv
 results/
+.DS_Store

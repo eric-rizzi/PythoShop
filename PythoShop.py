@@ -19,11 +19,60 @@ from PIL import Image
 
 from ImageManip import *
 
-DEFAULT_STARTING_IMAGE_PATH = "images/uchicago.bmp"
+DEFAULT_STARTING_PRIMARY_IMAGE_PATH = "images/uchicago.bmp"
+DEFAULT_STARTING_SECONDARY_IMAGE_PATH = "images/small_bear.bmp"
 
 
 class NoImageError(Exception):
     pass
+
+
+class ImageDisplay:
+    def __init__(self, *, is_primary: bool) -> None:
+        self.is_primary = is_primary
+        self.uix_image: typing.Optional[UixImage] = None
+        self.bytes: typing.Optional[BytesIO] = None
+
+    def is_image_loaded(self) -> bool:
+        return bool(self.uix_image)
+
+    def load_image(self, uix_image: UixImage, bytes_: BytesIO) -> None:
+        self.uix_image = uix_image
+        self.bytes = bytes_
+
+    def get_scatter(self) -> typing.Any:
+        if self.is_primary:
+            return PythoShopApp._root.image1
+        else:
+            return PythoShopApp._root.image2
+
+    def do_binds(self) -> None:
+        assert self.uix_image
+
+        self.uix_image.texture = CoreImage(self.bytes, ext="bmp").texture
+        # to avoid anti-aliassing when zoomed
+        self.uix_image.texture.mag_filter = "nearest"
+        self.uix_image.texture.min_filter = "nearest"
+
+    def do_resize(self) -> None:
+        assert self.uix_image
+        self.uix_image.size_hint = [None, None]
+
+        # Callback to change size of image based on the rendered scatter
+        def resize_image(instance, value):
+            assert self.uix_image
+            self.uix_image.size = instance.size
+            self.uix_image.pos = (0, 0)
+
+        # Bind resize_image to size and pos changes of the scatter
+        # NB: This is required since at the start of the program we don't
+        # yet know the final size of the scatter.
+        scatter = self.get_scatter()
+        scatter.bind(size=resize_image, pos=resize_image)
+        scatter.add_widget(self.uix_image, 100)
+
+        self.uix_image.size = scatter.size
+        self.uix_image.pos = (0, 0)
 
 
 def _set_extra(value: str) -> None:
@@ -65,16 +114,18 @@ def _is_secondary_tab_selected() -> bool:
     return bool(PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab)
 
 
-def _get_current_image() -> tuple[typing.Optional[UixImage], typing.Optional[BytesIO], typing.Any]:
+def _get_current_image() -> ImageDisplay:
     """
     Get the data associated with the currently loaded image
 
     :returns: Tuple of (image, bytes_in_image, and image_scatter)
     """
     if _is_primary_tab_selected():
-        return PythoShopApp._image1, PythoShopApp._bytes1, PythoShopApp._root.image1
+        return PythoShopApp._image1
+    elif _is_secondary_tab_selected():
+        return PythoShopApp._image2
     else:
-        return PythoShopApp._image2, PythoShopApp._bytes2, PythoShopApp._root.image2
+        raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
 
 
 def _select_color(x: int, y: int) -> None:  # sourcery skip: merge-else-if-into-elif
@@ -87,9 +138,9 @@ def _select_color(x: int, y: int) -> None:  # sourcery skip: merge-else-if-into-
     """
     assert PythoShopApp._color_picker
 
-    cimage, cbytes, cscatter = _get_current_image()
-    if cbytes:
-        img = Image.open(cbytes)
+    image = _get_current_image()
+    if image.bytes:
+        img = Image.open(image.bytes)
         r, g, b = img.getpixel((x, img.height - 1 - y))
         PythoShopApp._color_picker.color = (r / 255, g / 255, b / 255, 1)
 
@@ -180,10 +231,17 @@ def _write_image_to_file_system(bytes: BytesIO) -> None:
     new_image_file.close()
 
 
-def check_bmp_integrity(image: BytesIO) -> None:
+def _check_bmp_integrity(image: BytesIO) -> None:
+    """
+    Check (assert) that all the properties of a BitMap image are correct
+
+    :param image: Image to assert is a proper bitmap
+    :returns: None
+    """
     image.seek(0)
     assert image.read(2) == b"\x42\x4D", "header field was invalid"
     file_byte_size = int.from_bytes(image.read(4), "little")
+
     image.seek(10)
     first_pixel_offset = int.from_bytes(image.read(4), "little")
     header_size = int.from_bytes(image.read(4), "little")  # should be fpp - 14
@@ -192,6 +250,7 @@ def check_bmp_integrity(image: BytesIO) -> None:
     color_planes = int.from_bytes(image.read(2), "little")
     assert color_planes == 1, "color planes should be 1"
     bits_per_pixel = int.from_bytes(image.read(2), "little")
+
     bits_per_pixel_possibilities = [1, 4, 8, 16, 24, 32]
     assert bits_per_pixel in bits_per_pixel_possibilities, (
         "bits per pixel is set to " + str(bits_per_pixel) + " which is not one of the allowed options: " + ", ".join(bits_per_pixel_possibilities)
@@ -204,6 +263,7 @@ def check_bmp_integrity(image: BytesIO) -> None:
     row_byte_size = bytes_per_row + padding_bytes
     theoretical_file_size = first_pixel_offset + row_byte_size * pixel_height
     assert file_byte_size == theoretical_file_size, "file size is incorrect"
+
     compression = int.from_bytes(image.read(4), "little")
     assert compression == 0, "PythoShop doesn't support images with compression"
     pixel_data_byte_size = int.from_bytes(image.read(4), "little")
@@ -214,59 +274,41 @@ def check_bmp_integrity(image: BytesIO) -> None:
 
 def run_manip_function(func: typing.Callable, **kwargs) -> None:
     if _is_primary_tab_selected():
-        cimage = PythoShopApp._image1
-        bytes1 = PythoShopApp._bytes1
-        bytes2 = PythoShopApp._bytes2
+        image1 = PythoShopApp._image1
+        image2 = PythoShopApp._image2
     elif _is_secondary_tab_selected():
-        cimage = PythoShopApp._image2
-        bytes1 = PythoShopApp._bytes2
-        bytes2 = PythoShopApp._bytes1
+        image1 = PythoShopApp._image2
+        image2 = PythoShopApp._image1
     else:
         raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
 
-    if cimage is None or bytes1 is None:
+    if not image1.uix_image or not image1.bytes:
         raise NoImageError("The currently selected tab doesn't have an image loaded into it")
 
     try:
-        bytes1.seek(0)
+        image1.bytes.seek(0)
         kwargs["color"] = _get_chosen_color()
         kwargs["extra"] = _get_extra_text()
-        if bytes2:
-            bytes2.seek(0)
-            kwargs["other_image"] = bytes2
-        result = func(bytes1, **kwargs)
+        if image2.bytes:
+            image2.bytes.seek(0)
+            kwargs["other_image"] = image2.bytes
+
+        result = func(image1.bytes, **kwargs)
         if result != None:  # Something was returned, make sure it was an image file
             if result.__class__ != BytesIO:
                 raise Exception("Function", func.__name__, "should have returned an image but instead returned something else")
-            # Before we use the result, make sure it's valid
-            try:
-                check_bmp_integrity(result)
-            except AssertionError as ae:
-                raise Exception('The image returned by "' + func.__name__ + '" was corrupt and cannot be displayed: ' + str(ae))
-            if _is_primary_tab_selected():
-                result_bytes = PythoShopApp._bytes1 = result
-            elif _is_secondary_tab_selected():
-                result_bytes = PythoShopApp._bytes2 = result
-            else:
-                raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
+            verified_bytes = result
         else:  # No return: assume that the change has been made to the image itself (img1)
-            if _is_primary_tab_selected():
-                PythoShopApp._bytes1 = bytes1
-            elif _is_secondary_tab_selected():
-                PythoShopApp._bytes2 = bytes1
-            else:
-                raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
-            result_bytes = bytes1
-            try:
-                check_bmp_integrity(result_bytes)
-            except AssertionError as ae:
-                raise Exception('The image returned by "' + func.__name__ + '" was corrupt and cannot be displayed: ' + str(ae))
+            verified_bytes = image1.bytes
 
-        result_bytes.seek(0)
-        cimage.texture = CoreImage(result_bytes, ext="bmp").texture
-        # to avoid anti-aliassing when zoomed
-        cimage.texture.mag_filter = "nearest"
-        cimage.texture.min_filter = "nearest"
+        try:
+            _check_bmp_integrity(verified_bytes)
+        except AssertionError as ae:
+            raise Exception('The image returned by "' + func.__name__ + '" was corrupt and cannot be displayed: ' + str(ae))
+
+        verified_bytes.seek(0)
+        image1.load_image(image1.uix_image, verified_bytes)
+        image1.do_binds()
     except SyntaxError:
         print("Error: ", func.__name__, "generated an exception")
 
@@ -281,58 +323,27 @@ class FileChooserDialog(Widget):
         if len(file_name) != 1:
             return
 
-        if _is_primary_tab_selected():
-            image = PythoShopApp._image1
-            scatter = PythoShopApp._root.image1
-            if image is not None:
-                PythoShopApp._root.image1.remove_widget(image)
-        elif _is_secondary_tab_selected():
-            image = PythoShopApp._image2
-            scatter = PythoShopApp._root.image2
-            if image is not None:
-                PythoShopApp._root.image2.remove_widget(image)
-        else:
-            raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
+        image = _get_current_image()
+
+        scatter = image.get_scatter()
+        if image.uix_image:
+            scatter.remove_widget(image.uix_image)
 
         PhotoShopWidget._file_chooser_popup.dismiss()
 
         current_bytes = _get_image_bytes(file_name[0])
         current_bytes.seek(0)
-        cimg = CoreImage(current_bytes, ext="bmp")
 
         uix_image = UixImage(fit_mode="contain")
-        if _is_primary_tab_selected():
-            PythoShopApp._bytes1 = current_bytes
-            PythoShopApp._image1 = uix_image
-        elif _is_secondary_tab_selected():
-            PythoShopApp._bytes2 = current_bytes
-            PythoShopApp._image2 = uix_image
-        else:
-            raise NoImageError("Neither image tab was selected (which shouldn't be possible)")
-
-        uix_image.texture = cimg.texture
-        # to avoid anti-aliassing when we zoom in
-        uix_image.texture.mag_filter = "nearest"
-        uix_image.texture.min_filter = "nearest"
-        uix_image.size_hint = [None, None]
-
-        # Callback to change size of image based on the rendered scatter
-        def resize_image(instance, value):
-            uix_image.size = instance.size
-            uix_image.pos = (0, 0)
-
-        # Bind resize_image to size and pos changes of the scatter
-        scatter.bind(size=resize_image, pos=resize_image)
-
-        uix_image.size = scatter.size
-        uix_image.pos = (0, 0)
-        scatter.add_widget(uix_image, 100)
+        image.load_image(uix_image, current_bytes)
+        image.do_binds()
+        image.do_resize()
 
 
 class PhotoShopWidget(Widget):
     _file_chooser_popup = None
 
-    def toggle_color(self):
+    def toggle_color(self) -> None:
         if PythoShopApp._color_picker.is_visible:
             PythoShopApp._root.children[0].remove_widget(PythoShopApp._color_picker)
             PythoShopApp._color_picker.is_visible = False
@@ -342,25 +353,23 @@ class PhotoShopWidget(Widget):
             PythoShopApp._color_picker.is_visible = True
             PythoShopApp._root.color_button.text = "Set Color"
 
-    def load_image(self):
+    def load_image(self) -> None:
         if not PhotoShopWidget._file_chooser_popup:
             PhotoShopWidget._file_chooser_popup = Popup(title="Choose an image", content=FileChooserDialog(rootpath=os.path.expanduser("~")))
         PhotoShopWidget._file_chooser_popup.open()
 
-    def save_image(self):
-        bytes = None
-        if _is_primary_tab_selected() and PythoShopApp._image1:
-            bytes = PythoShopApp._bytes1
-        elif _is_secondary_tab_selected() and PythoShopApp._image2:
-            bytes = PythoShopApp._bytes2
-
-        if bytes:
-            _write_image_to_file_system(bytes)
+    def save_image(self) -> None:
+        image = _get_current_image()
+        if image.bytes:
+            _write_image_to_file_system(image.bytes)
 
     def apply_tool(self, event: MouseMotionEvent, callback: typing.Callable) -> bool:
-        cimage, cbytes, cscatter = _get_current_image()
-        if cimage and PythoShopApp._tool_function and _is_touch_in_image(cimage, event, cscatter):
-            _handle_touch_in_image(cimage, event, cscatter)
+        image = _get_current_image()
+
+        uix_image = image.uix_image
+        scatter = image.get_scatter()
+        if uix_image and PythoShopApp._tool_function and _is_touch_in_image(uix_image, event, scatter):
+            _handle_touch_in_image(uix_image, event, scatter)
             return True
         else:
             return callback(event)
@@ -373,16 +382,20 @@ class PhotoShopWidget(Widget):
 
 
 class PythoShopApp(App):
-    _image1: typing.Optional[UixImage] = None
-    _bytes1: typing.Optional[BytesIO] = None
-    _image2: typing.Optional[UixImage] = None
-    _bytes2: typing.Optional[BytesIO] = None
+    _image1: ImageDisplay = ImageDisplay(is_primary=True)
+    _image2: ImageDisplay = ImageDisplay(is_primary=False)
     _root: typing.Any = None
     _tool_function: typing.Any = None
     _color_picker: typing.Optional[ColorPicker] = None
     _first_color = True
 
-    def on_color(self, value):
+    def on_color(self, value: list[int]) -> None:
+        """
+        Callback method to retrieve colors for kivy's ColorPicker object
+
+        :param value: The color currently selected in rgba format
+        :returns: None
+        """
         my_value = value.copy()  # we ignore the alpha chanel
         my_value[3] = 1
         PythoShopApp._root.color_button.background_normal = ""
@@ -391,15 +404,16 @@ class PythoShopApp(App):
             PythoShopApp._root.color_button.color = [0, 0, 0, 1]
         else:
             PythoShopApp._root.color_button.color = [1, 1, 1, 1]
+
         if not PythoShopApp._first_color:
             PythoShopApp._root.color_button.text = "Set Color"
         else:
             PythoShopApp._first_color = False
 
-    def _on_file_drop(self, window, file_path):
+    def _on_file_drop(self, window, file_path: str) -> None:
         PythoShopApp._root.extra_input.text = file_path
 
-    def build(self):
+    def build(self) -> None:
         Window.bind(on_dropfile=self._on_file_drop)
         PythoShopApp._root = PhotoShopWidget()
         # Find the functions that can be run
@@ -445,9 +459,8 @@ class PythoShopApp(App):
 
             def select_filter(self, btn):
                 # currently selected tab actually has an image
-                if (PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.primary_tab and PythoShopApp._image1) or (
-                    PythoShopApp._root.images_panel.current_tab == PythoShopApp._root.secondary_tab and PythoShopApp._image2
-                ):
+                image = _get_current_image()
+                if image.is_image_loaded():
                     run_manip_function(btn.func)
 
             PythoShopApp._filter_dropdown.bind(on_select=select_filter)
@@ -460,32 +473,25 @@ class PythoShopApp(App):
         except SyntaxError:
             print("Error: ImageManip.py has a syntax error and can't be executed")
 
-        if os.path.exists(DEFAULT_STARTING_IMAGE_PATH):
-            current_bytes = _get_image_bytes(DEFAULT_STARTING_IMAGE_PATH)
+        if os.path.exists(DEFAULT_STARTING_PRIMARY_IMAGE_PATH):
+            current_bytes = _get_image_bytes(DEFAULT_STARTING_PRIMARY_IMAGE_PATH)
             current_bytes.seek(0)
-            cimg = CoreImage(current_bytes, ext="bmp")
 
             # Create a Kivy Image widget for the loaded image
             uix_image = UixImage(fit_mode="contain")
-            PythoShopApp._bytes1 = current_bytes
-            PythoShopApp._image1 = uix_image
+            PythoShopApp._image1.load_image(uix_image, current_bytes)
+            PythoShopApp._image1.do_binds()
+            PythoShopApp._image1.do_resize()
 
-            uix_image.texture = cimg.texture
-            # to avoid anti-aliassing when we zoom in
-            uix_image.texture.mag_filter = "nearest"
-            uix_image.texture.min_filter = "nearest"
-            uix_image.size_hint = [None, None]
+        if os.path.exists(DEFAULT_STARTING_SECONDARY_IMAGE_PATH):
+            current_bytes = _get_image_bytes(DEFAULT_STARTING_SECONDARY_IMAGE_PATH)
+            current_bytes.seek(0)
 
-            # Callback to change size of image based on the rendered scatter
-            def resize_image(instance, value):
-                uix_image.size = instance.size
-                uix_image.pos = (0, 0)
-
-            # Bind resize_image to size and pos changes of the scatter
-            # NB: This is required since at the start of the program we don't
-            # yet know the final size of the scatter.
-            PythoShopApp._root.image1.bind(size=resize_image, pos=resize_image)
-            PythoShopApp._root.image1.add_widget(uix_image, 100)
+            # Create a Kivy Image widget for the loaded image
+            uix_image = UixImage(fit_mode="contain")
+            PythoShopApp._image2.load_image(uix_image, current_bytes)
+            PythoShopApp._image2.do_binds()
+            PythoShopApp._image2.do_resize()
 
         return PythoShopApp._root
 
