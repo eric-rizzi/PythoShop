@@ -55,7 +55,7 @@ test_files += glob.glob("tests/test_0*")
 # test_files += glob.glob("tests/test_5*")
 # test_files += glob.glob("tests/test_6*")
 
-for student_folder in students.student_folders:
+for student_folder in students.STUDENT_FOLDERS:
     student_folder = os.path.join(student_folder, "PythoShop")
     student_vscode_folder = os.path.join(student_folder, ".vscode")
     student_test_folder = os.path.join(student_folder, "tests")
