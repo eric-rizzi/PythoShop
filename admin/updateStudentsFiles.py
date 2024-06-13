@@ -29,12 +29,14 @@ files = [
     "PythoShop.kv",
     "PythoShop.py",
     "PythoShopExports.py",
+    "pythoshop.code-workspace",
 ]
 
 examples_images = glob.glob("images/*")
 
 vscode_files = [
     ".vscode-students/launch.json",
+    # ".vscode-students/settings.json", # uncomment if want type checking
 ]
 
 test_files = []
