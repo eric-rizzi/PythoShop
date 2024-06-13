@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import glob
 import os
 import shutil
@@ -5,13 +6,31 @@ from stat import S_IREAD, S_IRGRP, S_IROTH, S_IWGRP, S_IWOTH, S_IWRITE
 
 import students
 
+ASSIGNMENT_NUMBER = 1  # Change this to determine which files to copy over
+PYTHOSHOP_FILE_PATHS_TO_COPY = [
+    "__init__.py",
+    "PythoShop.kv",
+    "PythoShop.py",
+    "PythoShopExports.py",
+    "pythoshop.code-workspace",
+]
+VSCODE_FILE_PATHS_TO_COPY = [
+    ".vscode-students/launch.json",
+    # ".vscode-students/settings.json", # uncomment if want type checking
+]
 
-def copy_readonly_files(files, destination_folder):
+IMAGE_FILES = glob.glob("images/*.bmp")
+
+EXPECTED_OUTPUTS = glob.glob("tests/expected_outputs/*")
+
+
+def copy_readonly_files(files: list[str], destination_folder: str) -> None:
     # print("Verifying folder exists...")
     try:
         os.makedirs(destination_folder)
     except FileExistsError:
         pass
+
     # print("Copying to " + destination_folder)
     for file in files:
         # print("    Copying " + str(file))
@@ -24,46 +43,52 @@ def copy_readonly_files(files, destination_folder):
         os.chmod(destination_file, S_IREAD | S_IRGRP | S_IROTH)
 
 
-files = [
-    "__init__.py",
-    "PythoShop.kv",
-    "PythoShop.py",
-    "PythoShopExports.py",
-    "pythoshop.code-workspace",
-]
+def get_base_test_files() -> list[str]:
+    base_test_files = []
+    base_test_files += glob.glob("tests/__init__.py")
+    base_test_files += glob.glob("tests/config.py")
+    base_test_files += glob.glob("tests/testBase.py")
+    base_test_files += glob.glob("tests/testBase2.py")
+    base_test_files += glob.glob("tests/testRunner.py")
+    base_test_files += glob.glob("tests/testTool.py")
+    base_test_files += glob.glob("tests/config.py")
+    base_test_files += glob.glob("tests/test_0*")
 
-examples_images = glob.glob("images/*")
+    return base_test_files
 
-vscode_files = [
-    ".vscode-students/launch.json",
-    # ".vscode-students/settings.json", # uncomment if want type checking
-]
 
-test_files = []
-test_files += glob.glob("tests/testBase*")
-test_files += glob.glob("tests/testFile*")
-test_files += glob.glob("tests/testOrig*")
-test_files += glob.glob("tests/testRun*")
-test_files += glob.glob("tests/testTool*")
-test_files += glob.glob("tests/config.py")
-# Initially only release the first tests and then add others as you get to them
-test_files += glob.glob("tests/test_0*")
-# test_files += glob.glob("tests/test_1*")
-# test_files += glob.glob("tests/test_2*")
-# test_files += glob.glob("tests/test_3*")
-# test_files += glob.glob("tests/test_4*")
-# test_files += glob.glob("tests/test_5*")
-# test_files += glob.glob("tests/test_6*")
+TEST_FILES: dict[int, list[str]] = {}
+TEST_FILES[0] = get_base_test_files()
+TEST_FILES[1] = glob.glob("tests/test_1*")
+TEST_FILES[2] = glob.glob("tests/test_2*")
+TEST_FILES[3] = glob.glob("tests/test_3*")
+TEST_FILES[4] = glob.glob("tests/test_4*")
+TEST_FILES[5] = glob.glob("tests/test_5*")
+TEST_FILES[6] = glob.glob("tests/test_6*")
 
-for student_folder in students.STUDENT_FOLDERS:
-    student_folder = os.path.join(student_folder, "PythoShop")
-    student_vscode_folder = os.path.join(student_folder, ".vscode")
-    student_test_folder = os.path.join(student_folder, "tests")
-    student_images_folder = os.path.join(student_folder, "images")
-    copy_readonly_files(files, student_folder)
-    copy_readonly_files(vscode_files, student_vscode_folder)
-    copy_readonly_files(test_files, student_test_folder)
-    copy_readonly_files(examples_images, student_images_folder)
-    image_manip = os.path.join(student_folder, "ImageManip.py")
-    if not os.path.exists(image_manip):
-        shutil.copy("ImageManipBlank.py", image_manip)
+
+if __name__ == "__main__":
+
+    test_files_to_copy = []
+    for i in range(0, ASSIGNMENT_NUMBER + 1):
+        test_files_to_copy += TEST_FILES[i]
+
+    for student_folder in students.STUDENT_FOLDERS:
+        student_folder = os.path.join(student_folder, "PythoShop")
+        copy_readonly_files(PYTHOSHOP_FILE_PATHS_TO_COPY, student_folder)
+
+        student_vscode_folder = os.path.join(student_folder, ".vscode")
+        copy_readonly_files(VSCODE_FILE_PATHS_TO_COPY, student_vscode_folder)
+
+        images_folder = os.path.join(student_folder, "images")
+        copy_readonly_files(IMAGE_FILES, images_folder)
+
+        expected_outputs_folder = os.path.join(student_folder, "tests/expected_outputs")
+        copy_readonly_files(EXPECTED_OUTPUTS, expected_outputs_folder)
+
+        student_test_folder = os.path.join(student_folder, "tests")
+        copy_readonly_files(test_files_to_copy, student_test_folder)
+
+        image_manip_path = os.path.join(student_folder, "ImageManip.py")
+        if not os.path.exists(image_manip_path):
+            shutil.copy("imageManipBlank.py", image_manip_path)
