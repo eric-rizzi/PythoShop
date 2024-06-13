@@ -7,9 +7,12 @@ import platform
 import random
 import signal
 import tempfile
+import typing
 import unittest
 
 import tests.config as config
+
+TESTING_TOLERANCE = 1  # may want to change this depending on how strict you want to be with rounding
 
 
 class TestTimeoutException(Exception):
@@ -37,22 +40,32 @@ class TestTimeout:
 
 
 class TestBase:
-    original_images = {}
-    solution_images = {}
+    original_images: dict[str, bytes] = {}
+    solution_images: dict[str, bytes] = {}
     test_parameters = {"color": (238, 0, 119), "extra": "extra parameters..."}
-    manip_func_name = None
-    manip_func = None
+    manip_func_name: typing.Optional[str] = None
+    manip_func: typing.Optional[str] = None
     test_weight = 0
-    image_sets = None
+    image_sets: typing.Optional[list[list[str]]] = None
     manip_module = None
     num_image_parameters = 1
-    tolerance = 1  # may want to change this depending on how strict you want to be with rounding
 
-    def __init__(self, test):
+    def __init__(self, test) -> None:
         super().__init__(test)
         self.__class__.test_parameters = self.__class__.test_parameters.copy()
         if self.image_sets is None:
             self.image_sets = list([file_name] for file_name in config.FILE_NAMES)
+
+    @staticmethod
+    def outside_tolerance(actual_color: int, correct_color: int) -> bool:
+        return actual_color < correct_color - TESTING_TOLERANCE or actual_color > correct_color + TESTING_TOLERANCE
+
+    @classmethod
+    def get_test_args_name(cls) -> str:
+        args_name = ""
+        for param, value in cls.test_parameters.items():
+            args_name += "_" + param + "_" + str(value)
+        return args_name
 
     def get_info(self, image):
         image.seek(10)
@@ -90,22 +103,28 @@ class TestBase:
         self.assertTrue(height1 == height2, "The height is incorrect.\n  Should be: " + str(height1) + "\n   Actually: " + str(height2))
 
     @classmethod
-    def get_parameter_str(cls):
+    def get_parameter_str(cls) -> str:
         parameter_str = ""
         for parameter_name, parameter_value in cls.test_parameters.items():
             parameter_str += "_" + parameter_name + "_" + str(parameter_value)
         return parameter_str
 
     @classmethod
+    def get_pickle_file_name(cls) -> str:
+        return cls.__module__.split(".")[-1] + ".pickle"
+
+    @classmethod
     def setUpClass(cls):
-        pickled_originals = open("testOriginals.pickle", "rb")
+        pickled_originals = open(os.path.join(config.EXPECTED_OUTPUT_IMAGE_FOLDER, "testOriginals.pickle"), "rb")
         cls.original_images = pickle.load(pickled_originals)
         pickled_originals.close()
+
         try:
             if "IMAGE_MANIP" in os.environ:
                 spec = importlib.util.spec_from_file_location("ImageManip", os.environ["IMAGE_MANIP"] + "/ImageManip.py")
             else:
-                spec = importlib.util.spec_from_file_location("ImageManip", os.getcwd() + "/../ImageManip.py")
+                spec = importlib.util.spec_from_file_location("ImageManip", os.getcwd() + "/ImageManip.py")
+
             cls.manip_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(cls.manip_module)
             if cls.manip_func_name in dir(cls.manip_module):
@@ -114,10 +133,12 @@ class TestBase:
                 raise unittest.SkipTest(cls.__module__ + ": function " + cls.manip_func_name + "() is not available to test")
         except SyntaxError:
             raise unittest.SkipTest(cls.__module__ + ": ImageManip.py has a syntax error and can't be tested")
+
         positional_args = inspect.getfullargspec(cls.manip_func.__wrapped__).args.copy()
         # starting from the end, remove all the args that are handled by kwargs so we're left with just positional args
         while positional_args[-1] in cls.test_parameters:
             positional_args = positional_args[:-1]
+
         # what should be left is just the image parameters
         if len(positional_args) < cls.num_image_parameters:
             raise unittest.SkipTest(
@@ -128,8 +149,9 @@ class TestBase:
                 + str(len(cls.test_parameters) + cls.num_image_parameters)
                 + " parameters."
             )
-        pickled_solutions_file_name = cls.__module__ + ".pickle"
-        pickled_solutions = open(pickled_solutions_file_name, "rb")
+        pickled_solutions_file_name = cls.get_pickle_file_name()
+        pickled_solutions_file_path = os.path.join(config.EXPECTED_OUTPUT_IMAGE_FOLDER, pickled_solutions_file_name)
+        pickled_solutions = open(pickled_solutions_file_path, "rb")
         cls.solution_images = pickle.load(pickled_solutions)
         pickled_solutions.close()
 
@@ -147,7 +169,8 @@ class TestBase:
                         try:
                             result = static_manip_func(image_file, **self.test_parameters)
                         except Exception as e:
-                            self.assertTrue(False, "Running on " + orig_file_name + " casused an exception: " + str(e))
+                            self.assertTrue(False, "Running on " + orig_file_name + " caused an exception: " + str(e))
+
                         if result == None:
                             result = image_file
                         self.assertTrue(type(result) == io.BytesIO or type(result) == io.BufferedRandom or type(result) == tempfile._TemporaryFileWrapper)
@@ -165,12 +188,9 @@ class TestBase:
                                 except:
                                     self.assertTrue(False, "Pixel at (" + str(pixel) + ", " + str(row) + ") could not be read.")
                                 if (
-                                    actual_b < correct_b - self.tolerance
-                                    or actual_b > correct_b + self.tolerance
-                                    or actual_g < correct_g - self.tolerance
-                                    or actual_g > correct_g + self.tolerance
-                                    or actual_r < correct_r - self.tolerance
-                                    or actual_r > correct_r + self.tolerance
+                                    self.outside_tolerance(actual_b, correct_b)
+                                    or self.outside_tolerance(actual_g, correct_g)
+                                    or self.outside_tolerance(actual_r, correct_r)
                                 ):
                                     pixel_index = fpp1 + row_size1 * row + 3 * pixel
                                     original_b, original_g, original_r = self.original_images[orig_file_name][pixel_index : pixel_index + 3]

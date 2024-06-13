@@ -51,13 +51,12 @@ class TestBase2(testBase.TestBase):
                                     actual_b, actual_g, actual_r = result.read(3)
                                 except:
                                     self.assertTrue(False, "Pixel at (" + str(pixel) + ", " + str(row) + ") could not be read.")
+
+                                self.outside_tolerance(actual_b, correct_b)
                                 if (
-                                    actual_b < correct_b - self.tolerance
-                                    or actual_b > correct_b + self.tolerance
-                                    or actual_g < correct_g - self.tolerance
-                                    or actual_g > correct_g + self.tolerance
-                                    or actual_r < correct_r - self.tolerance
-                                    or actual_r > correct_r + self.tolerance
+                                    self.outside_tolerance(actual_b, correct_b)
+                                    or self.outside_tolerance(actual_g, correct_g)
+                                    or self.outside_tolerance(actual_r, correct_r)
                                 ):
                                     pixel_index = fpp1 + row_size1 * row + 3 * pixel
                                     original1_b, original1_g, original1_r = self.original_images[image1_file_name][pixel_index : pixel_index + 3]

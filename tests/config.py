@@ -1,6 +1,10 @@
 DEFAULT_STARTING_PRIMARY_IMAGE_PATH = "images/uchicago.bmp"
 DEFAULT_STARTING_SECONDARY_IMAGE_PATH = "images/small_bear.bmp"
 
+IMAGES_FOLDER_PATH = "images"
+EXPECTED_OUTPUT_IMAGE_FOLDER = "tests/expected_outputs"
+TEST_ORIGINALS_PICKLE_FILE_NAME = "tests/expected_outputs/testOriginals.pickle"
+
 FILE_NAMES = [
     "even",
     "square",

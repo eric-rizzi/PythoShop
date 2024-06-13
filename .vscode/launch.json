@@ -37,10 +37,9 @@
             "name": "Gen solution",
             "type": "debugpy",
             "request": "launch",
-            "module": "pickleImages",
+            "program": "tests/pickleImages.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "cwd": "${workspaceFolder}/tests",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
             }
@@ -49,10 +48,9 @@
             "name": "Tests",
             "type": "debugpy",
             "request": "launch",
-            "module": "testRunner",
+            "program": "tests/testRunner.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "cwd": "${workspaceFolder}/tests",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
             }
