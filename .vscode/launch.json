@@ -5,14 +5,6 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Distribute files",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "admin/updateStudentsFiles.py",
-            "console": "integratedTerminal",
-            "justMyCode": false
-        },
-        {
             "name": "Install prereqs",
             "type": "debugpy",
             "request": "launch",
@@ -22,14 +14,6 @@
                 "pillow",
                 "Kivy"
             ],
-            "console": "integratedTerminal",
-            "justMyCode": true
-        },
-        {
-            "name": "PythoShop",
-            "type": "debugpy",
-            "request": "launch",
-            "program": "PythoShop.py",
             "console": "integratedTerminal",
             "justMyCode": true
         },
@@ -45,6 +29,22 @@
             }
         },
         {
+            "name": "Distribute files",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "admin/updateStudentsFiles.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
+        },
+        {
+            "name": "PythoShop",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "PythoShop.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
             "name": "Tests",
             "type": "debugpy",
             "request": "launch",
@@ -56,18 +56,6 @@
             }
         },
         {
-            "name": "Test One",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "gradeOne",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "cwd": "${workspaceFolder}/tests",
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/admin:${workspaceFolder}/tests"
-            }
-        },
-        {
             "name": "Test All",
             "type": "debugpy",
             "request": "launch",
@@ -76,6 +64,18 @@
                 ">",
                 "testResults.tsv",
             ],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/tests",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/admin:${workspaceFolder}/tests"
+            }
+        },
+        {
+            "name": "Test One",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "gradeOne",
             "console": "integratedTerminal",
             "justMyCode": true,
             "cwd": "${workspaceFolder}/tests",
