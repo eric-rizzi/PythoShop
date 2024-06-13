@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Install prereqs",
+            "name": "0 - Prereqs: Install prereqs",
             "type": "debugpy",
             "request": "launch",
             "module": "pip",
@@ -18,7 +18,7 @@
             "justMyCode": true
         },
         {
-            "name": "Gen solution",
+            "name": "1 - Prep: Gen solution",
             "type": "debugpy",
             "request": "launch",
             "program": "tests/pickleImages.py",
@@ -29,7 +29,7 @@
             }
         },
         {
-            "name": "Distribute files",
+            "name": "1 - Prep: Distribute files",
             "type": "debugpy",
             "request": "launch",
             "program": "admin/updateStudentsFiles.py",
@@ -37,7 +37,7 @@
             "justMyCode": false
         },
         {
-            "name": "PythoShop",
+            "name": "2 - Run: PythoShop",
             "type": "debugpy",
             "request": "launch",
             "program": "PythoShop.py",
@@ -45,7 +45,7 @@
             "justMyCode": true
         },
         {
-            "name": "Tests",
+            "name": "3 - Tests: Run Tests",
             "type": "debugpy",
             "request": "launch",
             "program": "tests/testRunner.py",
@@ -56,7 +56,7 @@
             }
         },
         {
-            "name": "Test All",
+            "name": "4 - Assess: Grade All",
             "type": "debugpy",
             "request": "launch",
             "module": "gradeAll",
@@ -72,7 +72,7 @@
             }
         },
         {
-            "name": "Test One",
+            "name": "4 - Assess: Grade One",
             "type": "debugpy",
             "request": "launch",
             "module": "gradeOne",
@@ -84,7 +84,7 @@
             }
         },
         {
-            "name": "Plagiarism check",
+            "name": "4 - Assess: Plagiarism check",
             "type": "debugpy",
             "request": "launch",
             "module": "plagiarismCheck",
