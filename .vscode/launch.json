@@ -59,14 +59,13 @@
             "name": "4 - Assess: Grade All",
             "type": "debugpy",
             "request": "launch",
-            "module": "gradeAll",
+            "program": "admin/gradeAll.py",
             "args": [
                 ">",
                 "testResults.tsv",
             ],
             "console": "integratedTerminal",
             "justMyCode": true,
-            "cwd": "${workspaceFolder}/tests",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/admin:${workspaceFolder}/tests"
             }
@@ -75,10 +74,9 @@
             "name": "4 - Assess: Grade One",
             "type": "debugpy",
             "request": "launch",
-            "module": "gradeOne",
+            "program": "admin/gradeOne.py",
             "console": "integratedTerminal",
             "justMyCode": true,
-            "cwd": "${workspaceFolder}/tests",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/admin:${workspaceFolder}/tests"
             }

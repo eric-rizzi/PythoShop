@@ -8,13 +8,13 @@ import unittest
 
 import students
 
-test_files = glob.glob("test_0*.py")
-test_files += glob.glob("test_1*.py")
-test_files += glob.glob("test_2*.py")
-test_files += glob.glob("test_3*.py")
-test_files += glob.glob("test_4*.py")
-test_files += glob.glob("test_5*.py")
-test_files += glob.glob("test_6*.py")
+test_files = glob.glob("tests/test_0*.py")
+test_files += glob.glob("tests/test_1*.py")
+test_files += glob.glob("tests/test_2*.py")
+test_files += glob.glob("tests/test_3*.py")
+test_files += glob.glob("tests/test_4*.py")
+test_files += glob.glob("tests/test_5*.py")
+test_files += glob.glob("tests/test_6*.py")
 test_files.sort()
 
 
@@ -119,18 +119,18 @@ if __name__ == "__main__":
         grade_str = str(grade)
         sys.stdout = orig_stdout
         for test_file in test_files:
-            test_package = test_file[: test_file.find(".")]
+            test_package = test_file[: test_file.find(".")].replace("/", ".")
             test_module = __import__(test_package)
             # spec = importlib.util.spec_from_file_location(test_package, student_folder + "/" + test_file)
             # test_module = importlib.util.module_from_spec(spec)
             # spec.loader.exec_module(test_module)
             # test_module = __import__(test_file)
-            if "Test" in dir(test_module):
-                test_class_name = "Test"
-            elif "Extension" in dir(test_module):
-                test_class_name = "Extension"
-            test_class = getattr(test_module, test_class_name)
-            test = test_class("test_images")
+            # if "Test" in dir(test_module):
+            #     test_class_name = "Test"
+            # elif "Extension" in dir(test_module):
+            #     test_class_name = "Extension"
+            # test_class = getattr(test_module, test_class_name)
+            # test = test_class("test_images")
             # test.test_images()
             # points_total += test_class.test_weight
             if test in testResults.tests:
