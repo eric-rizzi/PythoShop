@@ -61,6 +61,14 @@ class TestBase2(testBase.TestBase):
                                     pixel_index = fpp1 + row_size1 * row + 3 * pixel
                                     original1_b, original1_g, original1_r = self.original_images[image1_file_name][pixel_index : pixel_index + 3]
                                     original2_b, original2_g, original2_r = self.original_images[image2_file_name][pixel_index : pixel_index + 3]
+
+                                    solution_image.seek(0)
+                                    result.seek(0)
+                                    self.original_primary_image = self.original_images[image1_file_name]
+                                    self.original_secondary_image = self.original_images[image2_file_name]
+                                    self.expected_image = solution_image.read()
+                                    self.failing_image = result.read()
+
                                     self.assertTrue(
                                         False,
                                         "Pixel at ("

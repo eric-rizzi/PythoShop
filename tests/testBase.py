@@ -50,6 +50,12 @@ class TestBase:
     manip_module = None
     num_image_parameters = 1
 
+    # Used for showing side-by-side image of failing filter/tool
+    original_primary_image: typing.Optional[bytes] = None
+    original_secondary_image: typing.Optional[bytes] = None
+    expected_image: typing.Optional[bytes] = None
+    failing_image: typing.Optional[bytes] = None
+
     def __init__(self, test) -> None:
         super().__init__(test)
         self.__class__.test_parameters = self.__class__.test_parameters.copy()
@@ -187,6 +193,7 @@ class TestBase:
                                     actual_b, actual_g, actual_r = result.read(3)
                                 except:
                                     self.assertTrue(False, "Pixel at (" + str(pixel) + ", " + str(row) + ") could not be read.")
+
                                 if (
                                     self.outside_tolerance(actual_b, correct_b)
                                     or self.outside_tolerance(actual_g, correct_g)
@@ -194,6 +201,13 @@ class TestBase:
                                 ):
                                     pixel_index = fpp1 + row_size1 * row + 3 * pixel
                                     original_b, original_g, original_r = self.original_images[orig_file_name][pixel_index : pixel_index + 3]
+
+                                    solution_image.seek(0)
+                                    result.seek(0)
+                                    self.original_primary_image = self.original_images[orig_file_name]
+                                    self.expected_image = solution_image.read()
+                                    self.failing_image = result.read()
+
                                     self.assertTrue(
                                         False,
                                         "Pixel at ("

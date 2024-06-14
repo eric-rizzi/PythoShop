@@ -45,10 +45,25 @@
             "justMyCode": true
         },
         {
-            "name": "3 - Tests: Run Tests",
+            "name": "3 - Tests: Run All Tests",
             "type": "debugpy",
             "request": "launch",
             "program": "tests/testRunner.py",
+            "args": [
+                "--all",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
+            "name": "3 - Tests: Run Specific Tests",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "tests/testRunner.py",
+            "args": [],
             "console": "integratedTerminal",
             "justMyCode": true,
             "env": {
