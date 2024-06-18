@@ -65,14 +65,14 @@ def test_side_by_side_add_title_1() -> None:
         assert container_image.height == 210
 
 
-def test_side_by_side_paste_into_image_1() -> None:
+def test_side_by_side_paste_into_container_image_1() -> None:
     with open("images/even.bmp", "rb") as bmp_fp:
         sbs_image = SideBySideImage(bmp_fp.read(), "Test")
 
         container_image = SideBySideImage.get_container_image([sbs_image, sbs_image, sbs_image, sbs_image])
         draw = ImageDraw.Draw(container_image)
         font = ImageFont.load_default(size=16)
-        sbs_image.paste_into_image(container_image, draw, font, index=0)
+        sbs_image.paste_into_container_image(container_image, draw, font, index=0)
 
 
 def test_create_failure_visual_1() -> None:

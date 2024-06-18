@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import subprocess
 import sys
 import typing
@@ -19,6 +20,12 @@ def dummyRun(args, **kwargs):
 
 
 class SideBySideImage:
+    """
+    A class to allow easy printing of side-by-side images so students can
+    understand what the expected output was vs. their actual output. Basically,
+    it allows for the input image(s) to be printed alongside the expected
+    and the failing image.
+    """
     _WIDTH = 200
     _SEPARATOR = 20
     _TEXT_VERTICAL_SPACE = 60
@@ -53,19 +60,19 @@ class SideBySideImage:
         text_x = combined_image.width // 2 - int(len(title) * 4)
         draw.text((text_x, 5), title, fill="red", font=font)
 
-    def paste_into_image(
+    def paste_into_container_image(
         self,
-        combined_image: Image.Image,
+        container_image: Image.Image,
         draw: ImageDraw.ImageDraw,
         font: ImageFont.ImageFont,
         *,
         index: int,
     ) -> None:
         image_x = ((1 + index) * SideBySideImage._SEPARATOR) + (index * (SideBySideImage._WIDTH))
-        combined_image.paste(self.image, (image_x, 30))
+        container_image.paste(self.image, (image_x, 30))
 
         text_x = (image_x + self.width // 2) - len(self.tag) * 5
-        draw.text((text_x, combined_image.height - 25), self.tag, fill="black", font=font)
+        draw.text((text_x, container_image.height - 25), self.tag, fill="black", font=font)
 
 
 def _create_failure_visual(
@@ -105,7 +112,7 @@ def _create_failure_visual(
 
     # Paste the images side by side
     for index, image in enumerate(images):
-        image.paste_into_image(combined_image, draw, font, index=index)
+        image.paste_into_container_image(combined_image, draw, font, index=index)
 
     return combined_image
 
@@ -142,17 +149,118 @@ class TestResult(unittest.TextTestResult):
                 self.points_total += skipped_class.test_weight
 
 
-def get_test_suite_results(*, pattern: typing.Optional[str] = None) -> TestResult:
+def get_test_suite_results(
+        *,
+        pattern: typing.Optional[str] = None,
+        verbosity = 0,
+    ) -> TestResult:
     if pattern is None:
         pattern = "test*.py"
     else:
         pattern = f"test*{pattern}*py"
 
     testSuite = unittest.defaultTestLoader.discover("tests", pattern=pattern)
-    testProgram = unittest.TextTestRunner(stream=sys.stdout, verbosity=2)
+    testProgram = unittest.TextTestRunner(stream=sys.stdout, verbosity=verbosity)
     testProgram.resultclass = TestResult
     test_suite_results = testProgram.run(testSuite)
     return test_suite_results
+
+
+class AssessmentResult:
+    def __init__(self) -> None:
+        self.points_total = 0
+        self.points_earned = 0
+        self.functions_tested: typing.Set[str] = set()
+        self.test_results_map: typing.Dict[str, float] = {}
+
+    @property
+    def grade(self) -> int:
+        if self.points_total > 0:  # otherwise get a divide by zero
+            return round(100 * self.points_earned / self.points_total)
+        else:
+            return 0
+
+    def get_csv_row(self, name: str) -> typing.Dict[str, str]:
+        """
+        Get assessment results in dictionary form. The dictionary will contain
+        the students name, their final grade, an an individual breakdown of
+        the results on each test. Note that the dict is intended to be used
+        in conjunction with `csv.DictWriter()`.
+
+        :param name: Name of student
+        :returns: A dictionary of all information from run
+        """
+        row = {"Name": name, "Total": self.grade}
+        for test_name, percentage in self.test_results_map.items():
+            row[test_name] = str(percentage)
+
+        return row
+
+    def print_summary(self, *, include_grade = True) -> None:
+        print("")
+        print("Grade Summary")
+        print("======================================================================")
+        if include_grade:
+            print("  Total Points: " + str(self.points_total))
+
+        print(" Points Earned: " + str(round(self.points_earned)))
+
+        if include_grade:
+            print(f"Grade (approx): {self.grade}")
+
+
+def assess_image_manip(
+    pythoshop_folder_path: typing.Optional[str],
+    *,
+    pattern_to_test: typing.Optional[str] = None,
+    verbosity: int,
+) -> AssessmentResult:
+    if pythoshop_folder_path:
+        assert pythoshop_folder_path.endswith("PythoShop")
+        os.environ["IMAGE_MANIP"] = pythoshop_folder_path
+
+    results = AssessmentResult()
+    test_suite_results = get_test_suite_results(pattern=pattern_to_test, verbosity=verbosity)
+    for test in test_suite_results.tests:
+        print(f"Running test {test}")
+        results.functions_tested.add(test.manip_func_name)
+        num_sub_tests = len(test.image_sets)
+        sub_failures = [x for x in test_suite_results.failures if x[0].test_case == test]
+
+        num_sub_failures = len(sub_failures)
+        num_sub_success = num_sub_tests - num_sub_failures
+        percentage = 0
+
+        if num_sub_failures == 0:
+            percentage = 1.0
+        else:
+            if num_sub_success > 0:
+                # Get ~80% if passed at least one
+                percentage = 0.75 + 0.25 * num_sub_success / num_sub_tests
+            else:
+                percentage = 0
+
+            if pattern_to_test:
+                failure_image = _create_failure_visual(
+                    test_name=test.manip_func_name,
+                    original_primary=test.original_primary_image,
+                    original_secondary=test.original_secondary_image,
+                    expected=test.expected_image,
+                    failing_result=test.failing_image,
+                )
+                failure_image.show()
+
+        results.test_results_map[test.__module__] = percentage
+        percentage_str = str(round(percentage * 100))
+        points = percentage * test.test_weight
+        results.points_earned += points
+        print(" " * (3 - len(percentage_str)) + percentage_str + "% " + str(test.__module__) + " (" + str(round(points, 1)) + " points)")
+
+    results.points_total = int(1.15 * test_suite_results.points_total)
+    for skip in test_suite_results.skipped:
+        print("Skipped " + skip[1])
+
+    return results
 
 
 if __name__ == "__main__":
@@ -173,66 +281,9 @@ if __name__ == "__main__":
             print("Sorry, that doesn't look like a valid filter/tool")
             pattern_to_test = input("Which filter/tool to test? ")
 
-    points_total = 0
-    points_earned = 0
-    tests_passed = []
-    tests_partial = []
-    tests_failed = []
-    test_suite_results = get_test_suite_results(pattern=pattern_to_test)
-
     print("")
     print("Grade Breakdown")
     print("======================================================================")
 
-    for test in test_suite_results.tests:
-        print(f"Running test {test}")
-        num_sub_tests = len(test.image_sets)
-        sub_failures = [x for x in test_suite_results.failures if x[0].test_case == test]
-
-        num_sub_failures = len(sub_failures)
-        num_sub_success = num_sub_tests - num_sub_failures
-        percentage = 0
-        if num_sub_failures == 0:
-            tests_passed.append(test.__module__)
-            percentage = 1.0
-        else:
-            if num_sub_success > 0:
-                tests_partial.append(test.__module__)
-                # Get ~80% if passed at least one
-                percentage = 0.75 + 0.25 * num_sub_success / num_sub_tests
-            else:
-                tests_failed.append(test.__module__)
-                percentage = 0
-
-            if pattern_to_test:
-                failure_image = _create_failure_visual(
-                    test_name=test.manip_func_name,
-                    original_primary=test.original_primary_image,
-                    original_secondary=test.original_secondary_image,
-                    expected=test.expected_image,
-                    failing_result=test.failing_image,
-                )
-                failure_image.show()
-
-        percentage_str = str(round(percentage * 100))
-        points = percentage * test.test_weight
-        points_earned += points
-        print(" " * (3 - len(percentage_str)) + percentage_str + "% " + str(test.__module__) + " (" + str(round(points, 1)) + " points)")
-
-    points_total = int(1.15 * test_suite_results.points_total)
-    for skip in test_suite_results.skipped:
-        print("Skipped " + skip[1])
-
-    print("")
-    print("Grade Summary")
-    print("======================================================================")
-    if not pattern_to_test:
-        print("  Total Points: " + str(points_total))
-
-    print(" Points Earned: " + str(round(points_earned)))
-
-    if not pattern_to_test:
-        if points_total > 0:  # otherwise get a divide by zero
-            print("Grade (approx): " + str(round(100 * points_earned / points_total)))
-        else:
-            print("Grade (approx): 0")
+    results = assess_image_manip(None, verbosity=2, pattern_to_test=pattern_to_test)
+    results.print_summary(include_grade=bool(pattern_to_test == None))

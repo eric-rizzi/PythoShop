@@ -75,10 +75,6 @@
             "type": "debugpy",
             "request": "launch",
             "program": "admin/gradeAll.py",
-            "args": [
-                ">",
-                "testResults.tsv",
-            ],
             "console": "integratedTerminal",
             "justMyCode": true,
             "env": {
