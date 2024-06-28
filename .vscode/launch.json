@@ -5,15 +5,16 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Debug Current File",
+            "name": "Distribute files",
             "type": "debugpy",
             "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal"
+            "program": "admin/updateStudentsFiles.py",
+            "console": "integratedTerminal",
+            "justMyCode": false
         },
         {
             "name": "Install prereqs",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "pip",
             "args": [
@@ -26,15 +27,27 @@
         },
         {
             "name": "PythoShop",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "PythoShop.py",
             "console": "integratedTerminal",
             "justMyCode": true
         },
         {
+            "name": "Gen solution",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "pickleImages",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/tests",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            }
+        },
+        {
             "name": "Tests",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "testRunner",
             "console": "integratedTerminal",
@@ -45,13 +58,41 @@
             }
         },
         {
-            "name": "Gen solution",
-            "type": "python",
+            "name": "Test One",
+            "type": "debugpy",
             "request": "launch",
-            "module": "pickleImages",
+            "module": "gradeOne",
             "console": "integratedTerminal",
             "justMyCode": true,
             "cwd": "${workspaceFolder}/tests",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/admin:${workspaceFolder}/tests"
+            }
+        },
+        {
+            "name": "Test All",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "gradeAll",
+            "args": [
+                ">",
+                "testResults.tsv",
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/tests",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}:${workspaceFolder}/admin:${workspaceFolder}/tests"
+            }
+        },
+        {
+            "name": "Plagiarism check",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "plagiarismCheck",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "cwd": "${workspaceFolder}/admin",
             "env": {
                 "PYTHONPATH": "${workspaceFolder}"
             }

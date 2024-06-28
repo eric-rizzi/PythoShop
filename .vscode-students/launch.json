@@ -27,7 +27,7 @@
         },
         {
             "name": "Tests",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "module": "testRunner",
             "console": "integratedTerminal",

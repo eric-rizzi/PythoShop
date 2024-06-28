@@ -4,7 +4,18 @@
 * if returns a string, show it in a pop-up
 * reload the filechooser each time you bring it up so it can see new files
 
-# Other tools to add
-smudge
-draw_border
-make_gray tool
+# New lessons
+<!-- * smudge: too hard to do right -->
+* marker: circular pencil tool
+* flip: different than mirror
+* h/v_mirror_here tool
+
+# New solution
+* 
+
+# New tests
+* morph: fade
+
+# Checks
+* all tools when applied near the edge of the screen
+* 

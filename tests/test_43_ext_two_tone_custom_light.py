@@ -8,4 +8,5 @@ class Extension(testBase.TestBase, unittest.TestCase):
 
     def __init__(self, test):
         super().__init__(test)
-        self.__class__.test_parameters.update({"color": (255, 255, 0), "extra": "50, 0, 100"})
+        self.__class__.test_parameters.update({"color": (255, 255, 0)})
+        self.image_sets.remove(["dark"]) # just all one color

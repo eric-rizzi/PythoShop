@@ -3,9 +3,9 @@ import testBase
 
 
 class Extension(testBase.TestBase, unittest.TestCase):
-    manip_func_name = "fade_out_vertical"
-    test_weight = 1
+    manip_func_name = "borders"
+    test_weight = 5
 
     def __init__(self, test):
         super().__init__(test)
-        self.__class__.test_parameters.update({"color": (0, 0, 0)})
+        self.__class__.test_parameters.update({"extra": "3"})

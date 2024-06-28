@@ -8,4 +8,4 @@ class Extension(testBase.TestBase, unittest.TestCase):
 
     def __init__(self, test):
         super().__init__(test)
-        self.__class__.test_parameters.update({"extra": "6"})
+        self.__class__.test_parameters.update({"color": (255, 255, 255), "extra": "6"})

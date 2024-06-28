@@ -6,4 +6,8 @@ __pycache__
 *.pickle
 *.zip
 ImageManip*.py
-admin*/
+*.zip
+*.tsv
+*.csv
+results/
+.DS_Store
