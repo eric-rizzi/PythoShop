@@ -18,9 +18,7 @@ from kivy.uix.widget import Widget
 from PIL import Image
 
 from ImageManip import *
-
-DEFAULT_STARTING_PRIMARY_IMAGE_PATH = "images/midtown-logo.png"
-DEFAULT_STARTING_SECONDARY_IMAGE_PATH = "images/phoenix.png"
+from tests.config import DEFAULT_STARTING_PRIMARY_IMAGE_PATH, DEFAULT_STARTING_SECONDARY_IMAGE_PATH
 
 
 class NoImageError(Exception):
