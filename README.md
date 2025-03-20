@@ -57,5 +57,5 @@ required for the first three assignments into the student's GoogleDrive folder.
 
 At some point, you will want to introduce the "grades" to the students. Doing
 this too soon makes some of them become a bit... nervous. Therefore, it's
-worth commenting out the "Grades Summary" portion of `tests/test_runner.py
+worth commenting out the "Grades Summary" portion of `tests/test_runner.py`
 for a while.
