@@ -13,34 +13,10 @@
             "justMyCode": true
         },
         {
-            "name": "Install prereqs",
-            "type": "python",
-            "request": "launch",
-            "module": "pip",
-            "args": [
-                "install",
-                "pillow",
-                "Kivy"
-            ],
-            "console": "integratedTerminal",
-            "justMyCode": true
-        },
-        {
             "name": "Tests",
             "type": "python",
             "request": "launch",
             "program": "tests/test_runner.py",
-            "console": "integratedTerminal",
-            "justMyCode": true,
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}"
-            }
-        },
-        {
-            "name": "SingleTest",
-            "type": "python",
-            "request": "launch",
-            "program": "tests/test_single_function.py",
             "console": "integratedTerminal",
             "justMyCode": true,
             "env": {

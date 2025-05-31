@@ -1,9 +1,7 @@
 import ast
 import importlib
 import os
-import sys
 import typing
-import unittest
 from datetime import datetime
 from io import BytesIO
 
@@ -15,13 +13,22 @@ class SideBySideImage:
     _SEPARATOR = 20
     _TEXT_VERTICAL_SPACE = 60
 
-    def __init__(self, bytes: bytes, tag: str) -> None:
-        full_image = Image.open(BytesIO(bytes))
+    def __init__(
+        self,
+        bytes: bytes,
+        tag: str,
+    ) -> None:
+        self.orig_image = Image.open(BytesIO(bytes))
         self.tag = tag
 
         self.width = SideBySideImage._WIDTH
-        self.height = int(full_image.height * self.width / full_image.width)
-        self.image = full_image.resize((self.width, self.height))
+        self.height = int(self.orig_image.height * self.width / self.orig_image.width)
+        self.image = self.orig_image.resize((self.width, self.height))
+
+    def resize(self, rel_max_width: int) -> None:
+        self.width = int((self.orig_image.width / rel_max_width) * SideBySideImage._WIDTH)
+        self.height = int(self.orig_image.height * self.width / self.orig_image.width)
+        self.image = self.orig_image.resize((self.width, self.height))
 
     @staticmethod
     def get_total_width(total_images: int) -> int:
@@ -41,7 +48,7 @@ class SideBySideImage:
         draw: ImageDraw.ImageDraw,
         font: ImageFont.ImageFont,
     ) -> None:
-        title = f"Function: {test_name}, Time Stamp: {datetime.now().isoformat(timespec="seconds")}"
+        title = f"Function: {test_name}, Time Stamp: {datetime.now().isoformat()}"
         text_x = combined_image.width // 2 - int(len(title) * 4)
         draw.text((text_x, 5), title, fill="red", font=font)
 
@@ -66,6 +73,7 @@ def _create_failure_visual(
     original_secondary: typing.Optional[bytes],
     expected: bytes,
     failing_result: bytes,
+    alters_size: bool,
 ) -> Image.Image:
     """
     Shows the expected and actual results after running a particular filter
@@ -89,10 +97,15 @@ def _create_failure_visual(
     images.append(SideBySideImage(expected, "Expected"))
     images.append(SideBySideImage(failing_result, "Actual"))
 
+    if alters_size:
+        max_width = max([i.orig_image.width for i in images])
+        for i in images:
+            i.resize(max_width)
+
     # Create a new blank image to hold the combined images
     combined_image = SideBySideImage.get_container_image(images)
     draw = ImageDraw.Draw(combined_image)
-    font = ImageFont.load_default(size=16)
+    font = ImageFont.load_default()
     SideBySideImage.add_title_to_container_image(combined_image, test_name, draw, font)
 
     # Paste the images side by side
@@ -102,77 +115,7 @@ def _create_failure_visual(
     return combined_image
 
 
-def dummyInput(prompt=None):
-    raise RuntimeError("You should not be calling the input function within your manipulation functions (only in __main__)")
-
-
-def dummyRun(
-    args,
-    *,
-    stdin=None,
-    input=None,
-    stdout=None,
-    stderr=None,
-    capture_output=False,
-    shell=False,
-    cwd=None,
-    timeout=None,
-    check=False,
-    encoding=None,
-    errors=None,
-    text=None,
-    env=None,
-    universal_newlines=None,
-):
-    raise RuntimeError("You should not be calling the subprocess.run function within your manipulation functions (only in __main__)")
-
-
-class TestResult(unittest.TextTestResult):
-    def __init__(self, stream, descriptions, verbosity):
-        super().__init__(stream, descriptions, verbosity)
-        self.separator1 = "\n" + self.separator1
-        self.points_total = 0
-        self.tests = []
-
-    def addPoints(self, test):
-        assert test.test_weight != 0, "Test " + str(test) + " has zero weight"
-        assert type(test).__name__ == "Test" or type(test).__name__ == "Extension", "Test " + str(test) + ' is not named "Test" or "Extension"'
-        if type(test).__name__ == "Test":
-            self.points_total += test.test_weight
-
-    def startTest(self, test):
-        print(".", end="", flush=True)
-        self.addPoints(test)
-        self.tests.append(test)
-        super().startTest(test)
-
-    def addSkip(self, test, reason):
-        super().addSkip(test, reason)
-        # What a hack but I can't see any other way to get this
-        skipped_module_name = test.description[test.description.find("(") + 1 : test.description.find(".")]
-        skipped_class_name = test.description[test.description.find(".") + 1 : test.description.find(")")]
-        print("#", end="", flush=True)
-        if skipped_class_name == "Test":
-            skipped_module = __import__(skipped_module_name)
-            if skipped_class_name in dir(skipped_module):
-                skipped_class = getattr(skipped_module, skipped_class_name)
-                self.points_total += skipped_class.test_weight
-
-
-def get_test_suite_results(*, pattern: typing.Optional[str] = None) -> TestResult:
-    if pattern is None:
-        pattern = "test*.py"
-    else:
-        pattern = f"test*{pattern}*py"
-
-    testSuite = unittest.defaultTestLoader.discover("tests", pattern=pattern)
-    testProgram = unittest.TextTestRunner(stream=sys.stdout, verbosity=2)
-    testProgram.resultclass = TestResult
-    test_suite_results = testProgram.run(testSuite)
-    return test_suite_results
-
-
-def _get_image_bytes(file_name: str) -> BytesIO:
+def get_image_bytes(file_name: str) -> BytesIO:
     if os.path.splitext(file_name)[-1].lower() == ".bmp":
         # Load it directly rather than going through Pillow where we might loose some fidelity (e.g. paddding bytes)
         current_bytes = BytesIO()
@@ -218,38 +161,125 @@ def load_function(module_name, function_name_str) -> typing.Optional[typing.Call
         return None
 
 
-class FilterInfo(typing.NamedTuple):
-    is_required: bool
-    requires_secondary: bool
-    points: int
-    image: str = "daisies.bmp"
+class FilterInfo:
+    def __init__(
+        self,
+        is_required: bool,
+        points: typing.Optional[int] = None,
+        image: str = "daisies.bmp",
+        secondary_image: typing.Optional[str] = None,
+        color: tuple[int, int, int] = (255, 100, 20),
+        extra: str = "45,66,71",
+        alters_size: bool = False,
+    ):
+        if is_required:
+            assert points == None
+        else:
+            assert points is not None
+
+        self.is_required = is_required
+        self.points = points
+        self.image = image
+        self.secondary_image = secondary_image
+        self.color = color
+        self.extra = extra
+        self.alters_size = alters_size
 
 
 class CheckResult(typing.NamedTuple):
     exists: bool
     passed: typing.Optional[bool] = None
     message: typing.Optional[str] = None
+    percentage_correct: typing.Optional[float] = None
 
 
 POINTS = {
     # Change Pixel
-    "change_pixel": FilterInfo(is_required=True, requires_secondary=False, points=10, image="blank.bmp"),
-    "mark_middle": FilterInfo(is_required=True, requires_secondary=False, points=10, image="blank.bmp"),
-    "say_hi": FilterInfo(is_required=False, requires_secondary=False, points=10, image="uchicago.bmp"),
-    #
-    "lighten": FilterInfo(is_required=True, requires_secondary=False, points=10),
-    "make_gray": FilterInfo(is_required=True, requires_secondary=False, points=10),
-    "negate": FilterInfo(is_required=True, requires_secondary=False, points=10),
-    "darken": FilterInfo(is_required=False, requires_secondary=False, points=5),
-    "negate_red": FilterInfo(is_required=False, requires_secondary=False, points=2),
-    "negate_blue": FilterInfo(is_required=False, requires_secondary=False, points=2),
-    "negate_green": FilterInfo(is_required=False, requires_secondary=False, points=2),
-    "swap_grb": FilterInfo(is_required=False, requires_secondary=False, points=3),
-    "swap_bgr": FilterInfo(is_required=False, requires_secondary=False, points=3),
-    "redify": FilterInfo(is_required=False, requires_secondary=False, points=7),
-    "greenify": FilterInfo(is_required=False, requires_secondary=False, points=7),
-    "magentify": FilterInfo(is_required=False, requires_secondary=False, points=7),
+    "change_pixel": FilterInfo(is_required=True, image="blank.bmp"),
+    "mark_middle": FilterInfo(is_required=True, image="blank.bmp"),
+    "say_hi": FilterInfo(is_required=False, points=10, image="uchicago.bmp"),
+    # Change Multiple Pixels
+    "mark_four_corners": FilterInfo(is_required=True, image="blank.bmp"),
+    "mark_middle_with_t": FilterInfo(is_required=True, image="blank.bmp"),
+    "draw_t": FilterInfo(is_required=True, image="blank.bmp"),
+    "draw_rainbow": FilterInfo(is_required=False, points=10, image="blank.bmp"),
+    # # Drawing Lines
+    "draw_hline": FilterInfo(is_required=True, image="blank.bmp"),
+    "draw_vline": FilterInfo(is_required=True, image="blank.bmp"),
+    "draw_centered_hline": FilterInfo(is_required=False, points=5),
+    "draw_centered_vline": FilterInfo(is_required=False, points=5),
+    "draw_sloping_lines": FilterInfo(is_required=False, points=5),
+    "draw_frame": FilterInfo(is_required=False, points=5),
+    # Pixel Parts
+    "make_red": FilterInfo(is_required=True),
+    "make_static": FilterInfo(is_required=True),
+    "remove_red": FilterInfo(is_required=True),
+    "remove_green": FilterInfo(is_required=True),
+    "remove_blue": FilterInfo(is_required=True),
+    "max_red": FilterInfo(is_required=False, points=2),
+    "max_green": FilterInfo(is_required=False, points=2),
+    "max_blue": FilterInfo(is_required=False, points=2),
+    "only_red": FilterInfo(is_required=False, points=2),
+    "only_blue": FilterInfo(is_required=False, points=2),
+    "only_green": FilterInfo(is_required=False, points=2),
+    # Value Based Changes
+    "lighten": FilterInfo(is_required=True),
+    "make_gray": FilterInfo(is_required=True),
+    "negate": FilterInfo(is_required=True),
+    "darken": FilterInfo(is_required=False, points=5),
+    "negate_red": FilterInfo(is_required=False, points=2),
+    "negate_blue": FilterInfo(is_required=False, points=2),
+    "negate_green": FilterInfo(is_required=False, points=2),
+    "swap_grb": FilterInfo(is_required=False, points=3),
+    "swap_bgr": FilterInfo(is_required=False, points=3),
+    "redify": FilterInfo(is_required=False, points=7),
+    "greenify": FilterInfo(is_required=False, points=7),
+    "magentify": FilterInfo(is_required=False, points=7),
+    # Conditional
+    "intensify": FilterInfo(is_required=True),
+    "make_two_tone": FilterInfo(is_required=True, color=(255, 255, 255), extra="0,0,0"),
+    "make_four_tone": FilterInfo(is_required=True, color=(255, 255, 255), extra="0, 0, 0", image="bear.bmp"),
+    "make_custom_two_tone": FilterInfo(is_required=False, points=10),
+    "make_n_tone": FilterInfo(is_required=False, points=20, extra="3", color=(255, 255, 255), image="bear.bmp"),
+    "saturate": FilterInfo(is_required=False, points=30),
+    # Blending
+    "make_better_two_tone": FilterInfo(is_required=True, color=(255, 255, 255), extra="0, 0, 0"),
+    "blend_other": FilterInfo(is_required=True, image="underwater.bmp", secondary_image="scuba.bmp"),
+    "chroma_overlay": FilterInfo(is_required=True, image="underwater.bmp", secondary_image="scuba.bmp", color=(0, 255, 0)),
+    "blend_other_diff_sizes": FilterInfo(is_required=False, image="underwater.bmp", secondary_image="dog.bmp", points=5),
+    "blend_other_percentages": FilterInfo(is_required=False, image="underwater.bmp", secondary_image="scuba.bmp", points=5, extra=".2"),
+    "better_chroma_overlay": FilterInfo(is_required=False, image="underwater.bmp", secondary_image="bear.bmp", points=10, color=(193, 193, 202)),
+    "chroma_overlay_stamp": FilterInfo(is_required=False, image="underwater.bmp", secondary_image="scuba.bmp", points=15, color=(0, 255, 0)),
+    # Pixel Positions
+    # "make_line_drawing": FilterInfo(is_required=True, color=(0, 0, 0)),
+    # "mirror_left_horizontal": FilterInfo(is_required=True, image="scuba.bmp"),
+    # "shrink": FilterInfo(is_required=True, alters_size=True),
+    # "fade_in_vertical": FilterInfo(is_required=True, color=(0, 0, 0)),
+    # "fade_in_horizontal": FilterInfo(is_required=False, points=3, color=(0, 0, 0)),
+    # "fade_out_horizontal": FilterInfo(is_required=False, points=3, color=(0, 0, 0)),
+    # "fade_color_in_vertical": FilterInfo(is_required=False, points=8),
+    # "blend_gradual_horizontal": FilterInfo(is_required=False, image="underwater.bmp", secondary_image="scuba.bmp", points=10),
+    # "mirror_right_horizontal": FilterInfo(is_required=False, points=5),
+    # "mirror_top_vertical": FilterInfo(is_required=False, points=5),
+    # "enlarge": FilterInfo(is_required=False, alters_size=True, points=10),
+    # "better_shrink": FilterInfo(is_required=False, alters_size=True, points=15),
+    # "better_enlarge": FilterInfo(is_required=False, alters_size=True, points=15),
 }
+
+
+def get_percentage_correct(function_name: str) -> float:
+    while True:
+        try:
+            result_str = input(f"Testing {function_name}. How similar do they look (0-10)? ").strip()
+            if len(result_str) > 2 or (len(result_str) == 2 and result_str[0] == "0"):
+                continue
+            result = int(result_str)
+            if 0 <= result <= 10:
+                return result / 10
+            elif result > 10:
+                return 1.0
+        except ValueError:
+            continue
 
 
 def get_decorated_function_names(file_path: str) -> set[str]:
@@ -308,19 +338,31 @@ def get_decorated_function_names(file_path: str) -> set[str]:
 
 def load_image(image_name: str) -> BytesIO:
     image_path = os.path.join(os.path.dirname(__file__), f"../images/{image_name}")
-    ret = _get_image_bytes(image_path)
+    ret = get_image_bytes(image_path)
     ret.seek(0)
     return ret
 
 
-def execute_function(function: typing.Callable, image_name: str, image_secondary_name: typing.Optional[str] = None) -> bytes:
+def execute_function(
+    function: typing.Callable,
+    image_name: str,
+    filter_info: FilterInfo,
+    image_secondary_name: typing.Optional[str] = None,
+) -> bytes:
     image_bytes_io_primary = load_image(image_name)
     if image_secondary_name:
         image_bytes_io_secondary = load_image(image_secondary_name)
     else:
         image_bytes_io_secondary = None
 
-    result = function(image_bytes_io_primary, clicked_coordinate=(20, 20), color=(255, 100, 20), other_image=image_bytes_io_secondary, extra="45,66,71")
+    try:
+        kwargs = {"color": filter_info.color, "other_image": image_bytes_io_secondary, "extra": filter_info.extra}
+        result = function(image_bytes_io_primary, **kwargs)
+    except TypeError:
+        # Filter
+        kwargs = {"clicked_coordinate": (20, 20), "color": filter_info.color, "other_image": image_bytes_io_secondary, "extra": filter_info.extra}
+        result = function(image_bytes_io_primary, **kwargs)
+
     if not result:
         result = image_bytes_io_primary
     result.seek(0)
@@ -328,83 +370,130 @@ def execute_function(function: typing.Callable, image_name: str, image_secondary
 
 
 def check_single_function(function_name) -> CheckResult:
+    print(f"Checking {function_name}")
     filter_info = POINTS.get(function_name)
     if not filter_info:
-        return CheckResult(exists=False, message="No function by that name")
+        return CheckResult(exists=False, message="There is no function by that name.")
 
-    r1 = load_function("tests.obfuscated_manip", function_name)
-    assert r1
+    fn = load_function("image_manip", function_name)
+    if not fn:
+        return CheckResult(exists=False, message=f"Missing {function_name} in your `image_manip.py` file")
 
-    r2 = load_function("image_manip", function_name)
-    if not r2:
-        return CheckResult(exists=False, message=f"Missing {function_name}")
+    with open(os.path.join("tests", "expected_outputs", f"{function_name}.bmp"), "rb") as fp:
+        expected_bytes = fp.read()
 
-    image_path = filter_info.image
-    expected_bytes = execute_function(r1, image_path)
-    actual_bytes = execute_function(r2, image_path)
+    image_name = filter_info.image
+    image_secondary_name = filter_info.secondary_image
+    try:
+        actual_bytes = execute_function(fn, image_name, filter_info, image_secondary_name)
 
-    orig_bytes = load_image(image_path).read()
-    if filter_info.requires_secondary:
-        secondary_bytes = load_image(image_path).read()
-    else:
-        secondary_bytes = None
+        orig_bytes = load_image(image_name).read()
+        if image_secondary_name:
+            secondary_bytes = load_image(image_secondary_name).read()
+        else:
+            secondary_bytes = None
 
-    failure_image = _create_failure_visual(
-        test_name=function_name,
-        original_primary=orig_bytes,
-        original_secondary=secondary_bytes,
-        expected=expected_bytes,
-        failing_result=actual_bytes,
-    )
-    failure_image.show()
-    same = input(f"Testing {function_name}. Do they look the same? ").strip().lower()
-    if same.startswith("y"):
-        return CheckResult(exists=True, passed=True)
-    else:
-        return CheckResult(exists=True, passed=False)
+        failure_image = _create_failure_visual(
+            test_name=function_name,
+            original_primary=orig_bytes,
+            original_secondary=secondary_bytes,
+            expected=expected_bytes,
+            failing_result=actual_bytes,
+            alters_size=filter_info.alters_size,
+        )
+        failure_image.show()
+        result = get_percentage_correct(function_name)
+        return CheckResult(exists=True, passed=bool(result > 0.99), percentage_correct=result)
+    except (TypeError, ValueError, ZeroDivisionError, NameError) as e:
+        return CheckResult(exists=True, passed=False, message=str(e))
+
+    except AttributeError:
+        # Likely didn't convert a string to an int
+        return CheckResult(exists=True, passed=False, message="Failed with AttributeError error")
+
+    except OverflowError:
+        # Something is wrong with their function
+        return CheckResult(exists=True, passed=False, message="Failed with OverFlow error")
+
+
+def check_all_functions_exist() -> None:
+    existing_functions = get_decorated_function_names("image_manip.py")
+    if not existing_functions:
+        print("No decorated (e.g., @export_filter, @export_tool) functions found")
+        return
+
+    required = {k for k, v in POINTS.items() if v.is_required}
+    print(f"The following required functions are missing: {required.difference(existing_functions)}")
+    print(f"You might have some misspelled functions: {existing_functions.difference(POINTS.keys())}")
 
 
 def check_all_functions() -> None:
     existing_functions = get_decorated_function_names("image_manip.py")
     if not existing_functions:
+        print("No decorated (e.g., @export_filter, @export_tool) functions found")
         return
 
-    required_functions_missing = set()
-    required_functions_failing = set()
+    required_functions_missing = []
+    required_functions_failing = []
+    extensions_failing = []
 
+    required_possible_points = 0
+    required_actual_points = 0
     extension_points = 0
 
     for function_name, function_info in POINTS.items():
         result = check_single_function(function_name)
         if result.exists:
-            existing_functions.remove(function_name)
+            if function_name in existing_functions:
+                existing_functions.remove(function_name)
 
         if function_info.is_required:
+            required_possible_points += 1
+            required_actual_points += 1.0 * result.percentage_correct if result.percentage_correct else 0
+
             if not result.exists:
-                required_functions_missing.add(function_name)
+                required_functions_missing.append(function_name)
             elif not result.passed:
-                required_functions_failing.add(function_name)
+                required_functions_failing.append(function_name)
 
         else:
-            if result.passed:
-                extension_points += function_info.points
+            if result.exists:
+                extension_points += function_info.points * result.percentage_correct if result.percentage_correct else 0
+                if not result.passed:
+                    extensions_failing.append(function_name)
 
     print(f"The following required functions are missing: {required_functions_missing}")
     print(f"The following required functions are failing: {required_functions_failing}")
+    print(f"The following extension functions are failing: {extensions_failing}")
     print(f"You have {extension_points} points in extensions")
     if existing_functions:
         print(f"You might have some misspelled functions: {existing_functions}")
+
+    base_score = (required_actual_points / required_possible_points) * 87
+    extension_score = (extension_points / 120) * 13
+    print(f"Total predicted grade is {base_score + extension_score}")
 
 
 if __name__ == "__main__":
     ans = input('What filter/tool would you like to test (type "all" for all)? ').strip().lower()
     if ans == "all":
+        check_all_functions_exist()
         check_all_functions()
     else:
         result = check_single_function(ans)
         if not result.exists:
-            print("There is no function by that name. Are you sure you spelled it right?")
+            if result.message:
+                print(result.message)
+            else:
+                print("There is no function by that name. Are you sure you spelled it right?")
         elif result.passed:
-            print("Great job!")
+            filter_info = POINTS[ans]
+            if filter_info.is_required:
+                print("Great job! Another required function down!")
+            else:
+                print(f"Great job! That's {filter_info.points} points in extensions")
+
+        elif result.message:
+            print(f"There was an issue. The function didn't run because it {result.message}")
         else:
             print("Keep trying!")
